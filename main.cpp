@@ -44,9 +44,11 @@ public:
 
     void updateWeightsAndBiases(double learningRate) {}
 
-    void train(std::vector<std::vector<double>> &trainInputs, std::vector<std::vector<double>> &trainOutputs, double learningRate, int nEpochs);
+    void train(std::vector<std::vector<double>> &trainInputs, std::vector<std::vector<double>> &trainOutputs, std::vector<std::vector<double>> &validInputs, std::vector<std::vector<double>> &validOutputs, double learningRate, int nEpochs);
 
     double calculateMSE(std::vector<std::vector<double>> &inputs, std::vector<std::vector<double>> &targetOutputs);
+
+    std::vector<double> predict(std::vector<double> &inputs);
 
 
 };
@@ -123,7 +125,7 @@ void NeuralNetwork::updateWeightsAndBiases(double learningRate)
     }
 }
 
-void NeuralNetwork::train(std::vector<std::vector<double>> &trainInputs, std::vector<std::vector<double>> &trainOutputs, double learningRate, int nEpochs)
+void NeuralNetwork::train(std::vector<std::vector<double>> &trainInputs, std::vector<std::vector<double>> &trainOutputs, std::vector<std::vector<double>> &validInputs, std::vector<std::vector<double>> &validOutputs, double learningRate, int nEpochs)
 {
     for (int epoch = 0; epoch < nEpochs; epoch++) 
     {
@@ -133,8 +135,9 @@ void NeuralNetwork::train(std::vector<std::vector<double>> &trainInputs, std::ve
             backPropagate(trainOutputs[i]);
             updateWeightsAndBiases(learningRate);
         }
-        double loss = calculateMSE(trainInputs, trainOutputs);
-        std::cout << "Epoch " << epoch << " MSE: " << loss << std::endl;
+        double trainLoss = calculateMSE(trainInputs, trainOutputs);
+        double validLoss = calculateMSE(validInputs, validOutputs);
+        std::cout << "Epoch " << epoch << " Training MSE: " << trainLoss << ", Validation MSE: " << validLoss << std::endl;
     }
 }
 
@@ -151,4 +154,15 @@ double NeuralNetwork::calculateMSE(std::vector<std::vector<double>> &inputs, std
         }
     }
     return totalError / inputs.size();
+}
+
+std::vector<double> NeuralNetwork::predict(std::vector<double> &inputs)
+{
+    forwardPropagate(inputs);
+    std::vector<double> outputs;
+    for (auto &neuron : layers.back().neurons)
+    {
+        outputs.push_back(neuron.output);
+    }
+    return outputs;
 }
