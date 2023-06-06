@@ -1,9 +1,20 @@
 #include <vector>
 #include <cmath>
+#include <random>
 
 class Neuron
 {
 public:
+    Neuron(size_t nInputs)
+    {
+        std::default_random_engine generator;
+        std::normal_distribution<double> distribution(0.0, 1.0);
+        for (size_t i = 0; i < nInputs; i++)
+        {
+            weights.push_back(distribution(generator));
+        }
+        bias = distribution(generator);
+    }
     std::vector<double> weights; // weights for each input
     double bias;                 // bias value
     double output;               // output value
