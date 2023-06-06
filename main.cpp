@@ -3,7 +3,10 @@
 
 class Neuron {
 public:
-    double weight, bias, output, delta;
+    std::vector<double> weights; // weights for each input
+    double bias; // bias value
+    double output; // output value
+    double delta; // delta value for backpropagation
 };
 
 class Layer {
@@ -15,23 +18,27 @@ class NeuralNetwork {
 public:
     std::vector<Layer> layers;
 
-    void forwardPropagate() {
-        for (auto& layer : layers) {
-            for (auto& neuron : layer.neurons) {
-                double activation = neuron.weight * neuron.input + neuron.bias;
-                neuron.output = 1 / (1 + std::exp(-activation)); // sigmoid activation function
-            }
-        }
-    }
+        void forwardPropagate(std::vector<double>& inputs) {}
 
-    void backPropagate(std::vector<double>& targetOutputs) {
-        // Implement backpropagation here
-    }
+    void backPropagate(std::vector<double>& targetOutputs) {}
 
-    void updateWeightsAndBiases() {
-        // Implement weight and bias updates here
-    }
+    void updateWeightsAndBiases(double learningRate) {}
 };
+
+void NeuralNetwork::forwardPropagate(std::vector<double>& inputs){
+    for (auto& layer : layers) {
+            std::vector<double> outputs;
+            for (auto& neuron : layer.neurons) {
+                double activation = neuron.bias;
+                for (int i = 0; i < neuron.weights.size(); i++) {
+                    activation += neuron.weights[i] * inputs[i];
+                }
+                neuron.output = 1 / (1 + std::exp(-activation)); // sigmoid activation function
+                outputs.push_back(neuron.output);
+            }
+            inputs = outputs; // outputs of this layer are inputs to the next layer
+        }
+}
 
 void NeuralNetwork::backPropagate(std::vector<double>& targetOutputs) {
     // Calculate output layer deltas
@@ -55,3 +62,21 @@ void NeuralNetwork::backPropagate(std::vector<double>& targetOutputs) {
         hiddenLayer.neurons[i].delta = error * output * (1 - output); // derivative of sigmoid
     }
 }
+
+void NeuralNetwork::updateWeightsAndBiases(double learningRate) {
+     std::vector<double> inputs;
+        if (layers.size() > 1) {
+            for (auto& neuron : layers[layers.size() - 2].neurons) {
+                inputs.push_back(neuron.output);
+            }
+        }
+
+        for (auto& layer : layers) {
+            for (auto& neuron : layer.neurons) {
+                for (int i = 0; i < neuron.weights.size(); i++) {
+                    neuron.weights[i] += learningRate * neuron.delta * inputs[i]; // update weight
+                }
+                neuron.bias += learningRate * neuron.delta; // update bias
+            }
+        }
+    }
