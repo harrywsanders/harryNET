@@ -5,7 +5,7 @@
  *
  * This class represents a neural network model consisting of multiple layers of neurons. Each neuron has a set of weights, a bias, an output value, and a delta value used for backpropagation.
  * The neural network uses the sigmoid activation function for neurons and the mean squared error (MSE) loss function.
- * 
+ *
  * The class provides methods for forward propagation (predicting outputs from inputs), backward propagation (computing gradients of the loss function), and updating the weights and biases of the neurons (learning from the gradients).
  * The train method allows to train the network on a dataset with a specified learning rate and number of epochs.
  * The predict method computes the outputs for a given set of inputs after the network has been trained.
@@ -20,21 +20,22 @@ class NeuralNetwork
 public:
     std::vector<Layer> layers;
 
-    void forwardPropagate(std::vector<double> &inputs) {}
+    void forwardPropagate(std::vector<double> &inputs);
 
-    void backPropagate(std::vector<double> &targetOutputs) {}
+    void backPropagate(std::vector<double> &targetOutputs);
 
-    void updateWeightsAndBiases(double learningRate) {}
+    void updateWeightsAndBiases(double learningRate);
 
     void train(std::vector<std::vector<double>> &trainInputs, std::vector<std::vector<double>> &trainOutputs, std::vector<std::vector<double>> &validInputs, std::vector<std::vector<double>> &validOutputs, double learningRate, int nEpochs, int patience);
 
     double calculateMSE(std::vector<std::vector<double>> &inputs, std::vector<std::vector<double>> &targetOutputs);
 
     std::vector<double> predict(std::vector<double> &inputs);
+
+    double NeuralNetwork::accuracy(const std::vector<std::vector<double>> &inputs, const std::vector<std::vector<double>> &targetOutputs);
 };
 
-
-//Implementations begin here:
+// Implementations begin here:
 
 void NeuralNetwork::forwardPropagate(std::vector<double> &inputs)
 {
@@ -175,4 +176,23 @@ std::vector<double> NeuralNetwork::predict(std::vector<double> &inputs)
         outputs.push_back(neuron.output);
     }
     return outputs;
+}
+
+double NeuralNetwork::accuracy(const std::vector<std::vector<double>> &inputs, const std::vector<std::vector<double>> &targetOutputs)
+{
+    int correctCount = 0;
+
+    for (size_t i = 0; i < inputs.size(); ++i)
+    {
+        std::vector<double> prediction = predict(inputs[i]);
+        int predictedLabel = std::distance(prediction.begin(), std::max_element(prediction.begin(), prediction.end()));
+        int actualLabel = std::distance(targetOutputs[i].begin(), std::max_element(targetOutputs[i].begin(), targetOutputs[i].end()));
+
+        if (predictedLabel == actualLabel)
+        {
+            ++correctCount;
+        }
+    }
+
+    return static_cast<double>(correctCount) / inputs.size();
 }
