@@ -53,25 +53,25 @@ int main(int argc, char* argv[]) {
     std::vector<std::vector<double>> testInputs, testOutputs;
 
     // Load datasets
-    cout << "Loading datasets..." << endl;
+    std::cout << "Loading datasets..." << std::endl;
     loadDataset(options.trainingDataPath, trainingInputs, trainingOutputs);
     loadDataset(options.testDataPath, testInputs, testOutputs);
-    cout << "Done." << endl;
+    std::cout << "Done." << std::endl;
 
     // Initialize and train the network
     NeuralNetwork network;
-    cout << "Initializing network..." << endl;
+    std::cout << "Initializing network..." << std::endl;
     network.layers.push_back(Layer(784, 784));
     network.layers.push_back(Layer(50, 784));
     network.layers.push_back(Layer(10, 50));
-    cout << "Done." << endl;
+    std::cout << "Done." << std::endl;
 
-    cout << "Training network..." << endl;
+    std::cout << "Training network..." << std::endl;
     network.train(trainingInputs, trainingOutputs, testInputs, testOutputs, options.learningRate, options.numEpochs, options.patience);
-    cout << "Done." << endl;
+    std::cout << "Done." << std::endl;
 
     // Measure accuracy on the test set
-    cout << "Measuring accuracy on test set..." << endl;
+    std::cout << "Measuring accuracy on test set..." << std::endl;
     double testAccuracy = network.accuracy(testInputs, testOutputs);
     std::cout << "Test accuracy: " << testAccuracy << std::endl;
 
