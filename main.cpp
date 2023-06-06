@@ -2,7 +2,7 @@
 #include <cmath>
 #include <random>
 #include <iostream>
-#include <algorithm> 
+#include <algorithm>
 
 class Neuron
 {
@@ -27,8 +27,10 @@ class Layer
 {
 public:
     std::vector<Neuron> neurons;
-    Layer(size_t nNeurons, size_t nInputsPerNeuron) {
-        for(size_t i = 0; i < nNeurons; i++) {
+    Layer(size_t nNeurons, size_t nInputsPerNeuron)
+    {
+        for (size_t i = 0; i < nNeurons; i++)
+        {
             neurons.push_back(Neuron(nInputsPerNeuron));
         }
     }
@@ -50,8 +52,6 @@ public:
     double calculateMSE(std::vector<std::vector<double>> &inputs, std::vector<std::vector<double>> &targetOutputs);
 
     std::vector<double> predict(std::vector<double> &inputs);
-
-
 };
 
 void NeuralNetwork::forwardPropagate(std::vector<double> &inputs)
@@ -86,9 +86,10 @@ void NeuralNetwork::backPropagate(std::vector<double> &targetOutputs)
     }
 
     // Calculate hidden layer deltas
-    for (int l = layers.size() - 2; l >= 0; l--) {
+    for (int l = layers.size() - 2; l >= 0; l--)
+    {
         Layer &hiddenLayer = layers[l];
-        Layer &nextLayer = layers[l+1];
+        Layer &nextLayer = layers[l + 1];
         for (int i = 0; i < hiddenLayer.neurons.size(); i++)
         {
             double output = hiddenLayer.neurons[i].output;
@@ -130,14 +131,14 @@ void NeuralNetwork::train(std::vector<std::vector<double>> &trainInputs, std::ve
 {
     double bestValidLoss = std::numeric_limits<double>::max();
     int epochsWithoutImprovement = 0;
-    for (int epoch = 0; epoch < nEpochs; epoch++) 
+    for (int epoch = 0; epoch < nEpochs; epoch++)
     {
         // Shuffle training data
         std::random_shuffle(trainInputs.begin(), trainInputs.end());
         std::random_shuffle(trainOutputs.begin(), trainOutputs.end());
 
         // Train on all samples
-        for (int i = 0; i < trainInputs.size(); i++) 
+        for (int i = 0; i < trainInputs.size(); i++)
         {
             forwardPropagate(trainInputs[i]);
             backPropagate(trainOutputs[i]);
@@ -149,15 +150,15 @@ void NeuralNetwork::train(std::vector<std::vector<double>> &trainInputs, std::ve
         double validLoss = calculateMSE(validInputs, validOutputs);
 
         // Check early stopping condition
-        if (validLoss < bestValidLoss) 
+        if (validLoss < bestValidLoss)
         {
             bestValidLoss = validLoss;
             epochsWithoutImprovement = 0;
-        } 
-        else 
+        }
+        else
         {
             epochsWithoutImprovement++;
-            if (epochsWithoutImprovement >= patience) 
+            if (epochsWithoutImprovement >= patience)
             {
                 std::cout << "Early stopping..." << std::endl;
                 break;
