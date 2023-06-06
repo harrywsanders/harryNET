@@ -3,56 +3,9 @@
 #include <random>
 #include <iostream>
 #include <algorithm>
-
-class Neuron
-{
-public:
-    Neuron(size_t nInputs)
-    {
-        std::default_random_engine generator;
-        std::normal_distribution<double> distribution(0.0, 1.0);
-        for (size_t i = 0; i < nInputs; i++)
-        {
-            weights.push_back(distribution(generator));
-        }
-        bias = distribution(generator);
-    }
-    std::vector<double> weights; // weights for each input
-    double bias;                 // bias value
-    double output;               // output value
-    double delta;                // delta value for backpropagation
-};
-
-class Layer
-{
-public:
-    std::vector<Neuron> neurons;
-    Layer(size_t nNeurons, size_t nInputsPerNeuron)
-    {
-        for (size_t i = 0; i < nNeurons; i++)
-        {
-            neurons.push_back(Neuron(nInputsPerNeuron));
-        }
-    }
-};
-
-class NeuralNetwork
-{
-public:
-    std::vector<Layer> layers;
-
-    void forwardPropagate(std::vector<double> &inputs) {}
-
-    void backPropagate(std::vector<double> &targetOutputs) {}
-
-    void updateWeightsAndBiases(double learningRate) {}
-
-    void train(std::vector<std::vector<double>> &trainInputs, std::vector<std::vector<double>> &trainOutputs, std::vector<std::vector<double>> &validInputs, std::vector<std::vector<double>> &validOutputs, double learningRate, int nEpochs, int patience);
-
-    double calculateMSE(std::vector<std::vector<double>> &inputs, std::vector<std::vector<double>> &targetOutputs);
-
-    std::vector<double> predict(std::vector<double> &inputs);
-};
+#include 'neuron.h'
+#include 'layers.h'
+#include 'NeuralNet.h'
 
 void NeuralNetwork::forwardPropagate(std::vector<double> &inputs)
 {
