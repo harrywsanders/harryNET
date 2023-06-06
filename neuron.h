@@ -5,7 +5,7 @@
  *
  * Each neuron in the network has a set of weights (one for each input), a bias, an output value (computed in the forward propagation step), and a delta value (computed in the backward propagation step).
  * The neuron uses the sigmoid function as its activation function.
- * 
+ *
  * Note: This class does not include a method for computing the activation function or its derivative. These computations are done in the NeuralNetwork class.
  */
 
@@ -22,8 +22,8 @@ public:
         }
         bias = distribution(generator);
     }
-    std::vector<double> weights; 
-    double bias;                
-    double output;               
-    double delta;                
+    std::vector<double> weights;
+    double bias;
+    double output;
+    double delta;
 };

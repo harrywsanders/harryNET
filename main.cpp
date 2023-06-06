@@ -57,5 +57,8 @@ int main()
     // Train the network using arbitrary values.
     network.train(inputs, outputs, inputs, outputs, 0.01, 100, 10);
 
+    double trainingAccuracy = network.accuracy(inputs, outputs);
+    std::cout << "Training accuracy: " << trainingAccuracy << std::endl;
+
     return 0;
 }
