@@ -25,6 +25,11 @@ class Layer
 {
 public:
     std::vector<Neuron> neurons;
+    Layer(size_t nNeurons, size_t nInputsPerNeuron) {
+        for(size_t i = 0; i < nNeurons; i++) {
+            neurons.push_back(Neuron(nInputsPerNeuron));
+        }
+    }
 };
 
 class NeuralNetwork
@@ -37,6 +42,9 @@ public:
     void backPropagate(std::vector<double> &targetOutputs) {}
 
     void updateWeightsAndBiases(double learningRate) {}
+
+    void train(std::vector<std::vector<double>> &trainInputs, std::vector<std::vector<double>> &trainOutputs, double learningRate, int nEpochs);
+
 };
 
 void NeuralNetwork::forwardPropagate(std::vector<double> &inputs)
@@ -71,17 +79,19 @@ void NeuralNetwork::backPropagate(std::vector<double> &targetOutputs)
     }
 
     // Calculate hidden layer deltas
-    Layer &hiddenLayer = layers[0]; // assuming single hidden layer
-    Layer &nextLayer = layers[1];
-    for (int i = 0; i < hiddenLayer.neurons.size(); i++)
-    {
-        double output = hiddenLayer.neurons[i].output;
-        double error = 0.0;
-        for (int j = 0; j < nextLayer.neurons.size(); j++)
+    for (int l = layers.size() - 2; l >= 0; l--) {
+        Layer &hiddenLayer = layers[l];
+        Layer &nextLayer = layers[l+1];
+        for (int i = 0; i < hiddenLayer.neurons.size(); i++)
         {
-            error += nextLayer.neurons[j].delta * nextLayer.neurons[j].weights[i]; // weights from hidden layer to output layer
+            double output = hiddenLayer.neurons[i].output;
+            double error = 0.0;
+            for (int j = 0; j < nextLayer.neurons.size(); j++)
+            {
+                error += nextLayer.neurons[j].delta * nextLayer.neurons[j].weights[i]; // weights from hidden layer to output layer
+            }
+            hiddenLayer.neurons[i].delta = error * output * (1 - output); // derivative of sigmoid
         }
-        hiddenLayer.neurons[i].delta = error * output * (1 - output); // derivative of sigmoid
     }
 }
 
