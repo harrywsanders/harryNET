@@ -20,16 +20,17 @@ harryNET is a straightforward implementation of a neural network that allows you
 > - `<num_epochs>` (optional): Number of epochs for training. Default: 100.
 > - `<learning_rate>` (optional): Learning rate for weight updates. Default: 0.01.
 > - `<patience>` (optional): Patience parameter for early stopping. Default: 10.
+> - `<momentum>`: (optional): Momentum parameter. Default: 0.9.
 
 > ### Example Usage
 > 
 > ```
-> ./neural_net.exe mnist_train.csv mnist_test.csv 200 0.001 20
+> ./neural_net.exe mnist_train.csv mnist_test.csv 200 0.001 20 0.1
 > ```
 
 ## Goals for the Future
 
-> - **Optimization Techniques**: Explore advanced optimization techniques like momentum, adaptive learning rate, or weight decay to improve the network's performance.
+> - **Optimization Techniques**: Explore advanced optimization techniques like adaptive learning rate or weight decay to improve the network's performance.
 > - **GPU Acceleration**: Implement GPU usage through CUDA or otherwise to speed up the performance.
 > - **Diverse Activation Functions**: Incorporate different activation functions such as ReLU, tanh, or softmax to expand the network's capabilities and experiment with their impact on learning.
 > - **Regularization Methods**: Implement techniques like dropout or L1/L2 regularization to enhance generalization and prevent overfitting.
