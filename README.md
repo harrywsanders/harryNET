@@ -1,10 +1,10 @@
 # harryNET
 
-> Hey there! Welcome to harryNET, a simple neural network project in C++! This project was created with the goal of creating a simple neural network and applying it to a classification task using the MNIST dataset.
+> Hey there! Welcome to harryNET, a simple neural network built in C++! I created this network with the goal of using it as an educational tool on the base function of neural networks, and am continuing to update it with new features. 
 
 ## What's harryNET?
 
-harryNET is a straightforward implementation of a neural network that allows you to build and train your own models. I'm trying to make a user friendly and simple introduction to neural nets to help with education and with my own understanding!
+harryNET is a straightforward implementation of a neural network that allows you to build and train your own models. It's lightweight, simple, and constantly improving through updates!
 
 ## Usage
 
