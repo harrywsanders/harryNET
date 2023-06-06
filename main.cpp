@@ -7,10 +7,10 @@
 #include <sstream>
 #include <vector>
 #include <string>
-#include 'neuron.h'
-#include 'layers.h'
-#include 'NeuralNet.h'
-#include 'CommandLine.h'
+#include "neuron.h"
+#include "layers.h"
+#include "NeuralNet.h"
+#include "CommandLine.h"
 
 
 void loadDataset(const std::string& filename, std::vector<std::vector<double>>& inputs, std::vector<std::vector<double>>& outputs) {
@@ -55,9 +55,9 @@ int main(int argc, char* argv[]) {
 
     // Initialize and train the network
     NeuralNetwork network;
-    network.layers.push_back(Layer(784));
-    network.layers.push_back(Layer(50));
-    network.layers.push_back(Layer(10));
+    network.layers.push_back(Layer(784, 784));
+    network.layers.push_back(Layer(50, 784));
+    network.layers.push_back(Layer(10, 50));
 
     network.train(trainingInputs, trainingOutputs, testInputs, testOutputs, options.learningRate, options.numEpochs, options.patience);
 

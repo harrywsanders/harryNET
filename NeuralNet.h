@@ -15,12 +15,16 @@
  *
  */
 
+#include <chrono> 
+#include <algorithm>
+#include <random>
+
 class NeuralNetwork
 {
 public:
     std::vector<Layer> layers;
 
-    void forwardPropagate(std::vector<double> &inputs);
+    void forwardPropagate(const std::vector<double> &inputs);
 
     void backPropagate(std::vector<double> &targetOutputs);
 
@@ -30,14 +34,14 @@ public:
 
     double calculateMSE(std::vector<std::vector<double>> &inputs, std::vector<std::vector<double>> &targetOutputs);
 
-    std::vector<double> predict(std::vector<double> &inputs);
+    std::vector<double> predict(const std::vector<double> &inputs);
 
-    double NeuralNetwork::accuracy(const std::vector<std::vector<double>> &inputs, const std::vector<std::vector<double>> &targetOutputs);
+    double accuracy(const std::vector<std::vector<double>> &inputs, const std::vector<std::vector<double>> &targetOutputs);
 };
 
 // Implementations begin here:
 
-void NeuralNetwork::forwardPropagate(std::vector<double> &inputs)
+void NeuralNetwork::forwardPropagate(const std::vector<double> &inputs)
 {
     for (auto &layer : layers)
     {
@@ -45,7 +49,7 @@ void NeuralNetwork::forwardPropagate(std::vector<double> &inputs)
         for (auto &neuron : layer.neurons)
         {
             double activation = neuron.bias;
-            for (int i = 0; i < neuron.weights.size(); i++)
+            for (int i = 0; i < static_cast<int>(neuron.weights.size()); i++)
             {
                 activation += neuron.weights[i] * inputs[i];
             }
@@ -60,7 +64,7 @@ void NeuralNetwork::backPropagate(std::vector<double> &targetOutputs)
 {
     // Calculate output layer deltas
     Layer &outputLayer = layers.back();
-    for (int i = 0; i < outputLayer.neurons.size(); i++)
+    for (int i = 0; i < static_cast<int>(outputLayer.neurons.size()); i++)
     {
         double output = outputLayer.neurons[i].output;
         double target = targetOutputs[i];
@@ -73,11 +77,11 @@ void NeuralNetwork::backPropagate(std::vector<double> &targetOutputs)
     {
         Layer &hiddenLayer = layers[l];
         Layer &nextLayer = layers[l + 1];
-        for (int i = 0; i < hiddenLayer.neurons.size(); i++)
+        for (int i = 0; i < static_cast<int>(hiddenLayer.neurons.size()); i++)
         {
             double output = hiddenLayer.neurons[i].output;
             double error = 0.0;
-            for (int j = 0; j < nextLayer.neurons.size(); j++)
+            for (int j = 0; j < static_cast<int>(nextLayer.neurons.size()); j++)
             {
                 error += nextLayer.neurons[j].delta * nextLayer.neurons[j].weights[i]; // weights from hidden layer to output layer
             }
@@ -101,7 +105,7 @@ void NeuralNetwork::updateWeightsAndBiases(double learningRate)
     {
         for (auto &neuron : layer.neurons)
         {
-            for (int i = 0; i < neuron.weights.size(); i++)
+            for (int i = 0; i < static_cast<int>(neuron.weights.size()); i++)
             {
                 neuron.weights[i] += learningRate * neuron.delta * inputs[i]; // update weight
             }
@@ -116,12 +120,15 @@ void NeuralNetwork::train(std::vector<std::vector<double>> &trainInputs, std::ve
     int epochsWithoutImprovement = 0;
     for (int epoch = 0; epoch < nEpochs; epoch++)
     {
+        //Get generator seed
+        unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+
         // Shuffle training data
-        std::random_shuffle(trainInputs.begin(), trainInputs.end());
-        std::random_shuffle(trainOutputs.begin(), trainOutputs.end());
+        std::shuffle(trainInputs.begin(), trainInputs.end(), std::default_random_engine(seed));
+        std::shuffle(trainOutputs.begin(), trainOutputs.end(), std::default_random_engine(seed));
 
         // Train on all samples
-        for (int i = 0; i < trainInputs.size(); i++)
+        for (int i = 0; i < static_cast<int>(trainInputs.size()); i++)
         {
             forwardPropagate(trainInputs[i]);
             backPropagate(trainOutputs[i]);
@@ -155,19 +162,19 @@ void NeuralNetwork::train(std::vector<std::vector<double>> &trainInputs, std::ve
 double NeuralNetwork::calculateMSE(std::vector<std::vector<double>> &inputs, std::vector<std::vector<double>> &targetOutputs)
 {
     double totalError = 0.0;
-    for (int i = 0; i < inputs.size(); i++)
+    for (int i = 0; i < static_cast<int>(inputs.size()); i++)
     {
         forwardPropagate(inputs[i]);
-        for (int j = 0; j < targetOutputs[i].size(); j++)
+        for (int j = 0; j < static_cast<int>(targetOutputs[i].size()); j++)
         {
             double error = targetOutputs[i][j] - layers.back().neurons[j].output;
             totalError += error * error;
         }
     }
-    return totalError / inputs.size();
+    return totalError / static_cast<int>(inputs.size());
 }
 
-std::vector<double> NeuralNetwork::predict(std::vector<double> &inputs)
+std::vector<double> NeuralNetwork::predict(const std::vector<double> &inputs)
 {
     forwardPropagate(inputs);
     std::vector<double> outputs;
