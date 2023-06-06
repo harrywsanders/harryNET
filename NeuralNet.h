@@ -3,11 +3,11 @@
  *
  * @brief A simple implementation of a feed-forward neural network using the backpropagation algorithm.
  *
- * This class represents a neural network model consisting of multiple layers of neurons. Each neuron has a set of weights, a bias, a velocity, an output value, and a delta value used for backpropagation.
+ * This class represents a neural network model consisting of multiple layers of neurons. Each neuron has a set of weights, a bias, an output value, and a delta value used for backpropagation.
  * The neural network uses the sigmoid activation function for neurons and the mean squared error (MSE) loss function.
  *
  * The class provides methods for forward propagation (predicting outputs from inputs), backward propagation (computing gradients of the loss function), and updating the weights and biases of the neurons (learning from the gradients).
- * The train method allows to train the network on a dataset with a specified learning rate, number of epochs, and momentum.
+ * The train method allows to train the network on a dataset with a specified learning rate and number of epochs.
  * The predict method computes the outputs for a given set of inputs after the network has been trained.
  *
  * Early stopping is implemented in the train method, which halts training when validation loss hasn't improved for a number of epochs (specified by the 'patience' parameter).
@@ -15,28 +15,26 @@
  *
  */
 
-#include <chrono>
+#include <chrono> 
 #include <algorithm>
 #include <random>
 
 /**
  * Helper function to show training progress bar in the console.
- */
+*/
 void printProgressBar(int current, int total)
 {
     int percent = (current * 100) / total;
     std::cout << "\rTraining progress: [";
 
     int i = 0;
-    for (; i < percent / 2; i++)
-        std::cout << "=";
+    for (; i < percent/2; i++) std::cout << "=";
 
-    for (; i < 50; i++)
-        std::cout << " ";
+    for (; i < 50; i++) std::cout << " ";
 
     std::cout << "] " << percent << "%   ";
 
-    std::cout.flush();
+    std::cout.flush(); 
 }
 
 class NeuralNetwork
@@ -48,9 +46,9 @@ public:
 
     void backPropagate(std::vector<double> &targetOutputs);
 
-    void updateWeightsAndBiases(double learningRate, double momentum, double epsilon);
+    void updateWeightsAndBiases(double learningRate);
 
-    void train(std::vector<std::vector<double>> &trainInputs, std::vector<std::vector<double>> &trainOutputs, std::vector<std::vector<double>> &validInputs, std::vector<std::vector<double>> &validOutputs, double learningRate, int nEpochs, int patience, double momentum, double epsilon);
+    void train(std::vector<std::vector<double>> &trainInputs, std::vector<std::vector<double>> &trainOutputs, std::vector<std::vector<double>> &validInputs, std::vector<std::vector<double>> &validOutputs, double learningRate, int nEpochs, int patience);
 
     double calculateMSE(std::vector<std::vector<double>> &inputs, std::vector<std::vector<double>> &targetOutputs);
 
@@ -111,7 +109,7 @@ void NeuralNetwork::backPropagate(std::vector<double> &targetOutputs)
     }
 }
 
-void NeuralNetwork::updateWeightsAndBiases(double initialLearningRate, double momentum, double epsilon)
+void NeuralNetwork::updateWeightsAndBiases(double learningRate)
 {
     std::vector<double> inputs;
     if (layers.size() > 1)
@@ -128,24 +126,20 @@ void NeuralNetwork::updateWeightsAndBiases(double initialLearningRate, double mo
         {
             for (int i = 0; i < static_cast<int>(neuron.weights.size()); i++)
             {
-                double gradient = neuron.delta * inputs[i];
-                neuron.velocity[i] = momentum * neuron.velocity[i] + (1 - momentum) * gradient;
-                neuron.velocity[i] += gradient * gradient;
-                double learningRate = initialLearningRate / (std::sqrt(neuron.velocity[i]) + epsilon);
-                neuron.weights[i] += learningRate * neuron.velocity[i];
+                neuron.weights[i] += learningRate * neuron.delta * inputs[i]; // update weight
             }
-            neuron.bias += initialLearningRate * neuron.delta;
+            neuron.bias += learningRate * neuron.delta; // update bias
         }
     }
 }
 
-void NeuralNetwork::train(std::vector<std::vector<double>> &trainInputs, std::vector<std::vector<double>> &trainOutputs, std::vector<std::vector<double>> &validInputs, std::vector<std::vector<double>> &validOutputs, double learningRate, int nEpochs, int patience, double momentum, double epsilon)
+void NeuralNetwork::train(std::vector<std::vector<double>> &trainInputs, std::vector<std::vector<double>> &trainOutputs, std::vector<std::vector<double>> &validInputs, std::vector<std::vector<double>> &validOutputs, double learningRate, int nEpochs, int patience)
 {
     double bestValidLoss = std::numeric_limits<double>::max();
     int epochsWithoutImprovement = 0;
     for (int epoch = 0; epoch < nEpochs; epoch++)
     {
-        // Get generator seed
+        //Get generator seed
         unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
 
         // Shuffle training data
@@ -157,7 +151,7 @@ void NeuralNetwork::train(std::vector<std::vector<double>> &trainInputs, std::ve
         {
             forwardPropagate(trainInputs[i]);
             backPropagate(trainOutputs[i]);
-            updateWeightsAndBiases(learningRate, momentum, epsilon);
+            updateWeightsAndBiases(learningRate);
         }
 
         // Calculate losses

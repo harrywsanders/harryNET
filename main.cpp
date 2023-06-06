@@ -12,30 +12,25 @@
 #include "NeuralNet.h"
 #include "CommandLine.h"
 
-void loadDataset(const std::string &filename, std::vector<std::vector<double>> &inputs, std::vector<std::vector<double>> &outputs)
-{
+
+void loadDataset(const std::string& filename, std::vector<std::vector<double>>& inputs, std::vector<std::vector<double>>& outputs) {
     std::ifstream file(filename);
     std::string line;
 
     std::getline(file, line);
 
-    while (getline(file, line))
-    {
+    while (getline(file, line)) {
         std::vector<double> input;
         std::vector<double> output(10, 0.0);
 
         std::istringstream ss(line);
         std::string value;
         int index = 0;
-        while (getline(ss, value, ','))
-        {
+        while (getline(ss, value, ',')) {
             double num = std::stod(value);
-            if (index == 0)
-            {
+            if (index == 0) {
                 output[(int)num] = 1.0;
-            }
-            else
-            {
+            } else {
                 input.push_back(num / 255.0);
             }
             index++;
@@ -46,11 +41,9 @@ void loadDataset(const std::string &filename, std::vector<std::vector<double>> &
     }
 }
 
-int main(int argc, char *argv[])
-{
-    if (argc > 8)
-    {
-        std::cout << "Usage: " << argv[0] << " [<training_data>] [<test_data>] [<num_epochs>] [<learning_rate>] [<patience>] [<momentum>] [<epsilon>]" << std::endl;
+int main(int argc, char* argv[]) {
+    if (argc > 6) {
+        std::cout << "Usage: " << argv[0] << " [<training_data>] [<test_data>] [<num_epochs>] [<learning_rate>] [<patience>]" << std::endl;
         return 1;
     }
 
@@ -74,7 +67,7 @@ int main(int argc, char *argv[])
     std::cout << "Done." << std::endl;
 
     std::cout << "Training network..." << std::endl;
-    network.train(trainingInputs, trainingOutputs, testInputs, testOutputs, options.learningRate, options.numEpochs, options.patience, options.momentum, options.epsilon);
+    network.train(trainingInputs, trainingOutputs, testInputs, testOutputs, options.learningRate, options.numEpochs, options.patience);
     std::cout << "Done." << std::endl;
 
     // Measure accuracy on the test set
