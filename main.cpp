@@ -1,6 +1,7 @@
 #include <vector>
 #include <cmath>
 #include <random>
+#include <iostream>
 
 class Neuron
 {
@@ -44,6 +45,9 @@ public:
     void updateWeightsAndBiases(double learningRate) {}
 
     void train(std::vector<std::vector<double>> &trainInputs, std::vector<std::vector<double>> &trainOutputs, double learningRate, int nEpochs);
+
+    double calculateMSE(std::vector<std::vector<double>> &inputs, std::vector<std::vector<double>> &targetOutputs);
+
 
 };
 
@@ -117,4 +121,34 @@ void NeuralNetwork::updateWeightsAndBiases(double learningRate)
             neuron.bias += learningRate * neuron.delta; // update bias
         }
     }
+}
+
+void NeuralNetwork::train(std::vector<std::vector<double>> &trainInputs, std::vector<std::vector<double>> &trainOutputs, double learningRate, int nEpochs)
+{
+    for (int epoch = 0; epoch < nEpochs; epoch++) 
+    {
+        for (int i = 0; i < trainInputs.size(); i++) 
+        {
+            forwardPropagate(trainInputs[i]);
+            backPropagate(trainOutputs[i]);
+            updateWeightsAndBiases(learningRate);
+        }
+        double loss = calculateMSE(trainInputs, trainOutputs);
+        std::cout << "Epoch " << epoch << " MSE: " << loss << std::endl;
+    }
+}
+
+double NeuralNetwork::calculateMSE(std::vector<std::vector<double>> &inputs, std::vector<std::vector<double>> &targetOutputs)
+{
+    double totalError = 0.0;
+    for (int i = 0; i < inputs.size(); i++)
+    {
+        forwardPropagate(inputs[i]);
+        for (int j = 0; j < targetOutputs[i].size(); j++)
+        {
+            double error = targetOutputs[i][j] - layers.back().neurons[j].output;
+            totalError += error * error;
+        }
+    }
+    return totalError / inputs.size();
 }
