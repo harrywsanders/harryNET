@@ -89,7 +89,7 @@ void NeuralNetwork::backPropagate(std::vector<double> &targetOutputs)
         double output = outputLayer.neurons[i].output;
         double target = targetOutputs[i];
         double error = target - output;
-        hiddenLayer.neurons[i].delta = error * ((output > 0) ? 1 : 0); // derivative of ReLU
+        outputLayer.neurons[i].delta = error * output * (1 - output); // derivative of MSE loss with respect to output * derivative of sigmoid
     }
 
     // Calculate hidden layer deltas
@@ -105,7 +105,8 @@ void NeuralNetwork::backPropagate(std::vector<double> &targetOutputs)
             {
                 error += nextLayer.neurons[j].delta * nextLayer.neurons[j].weights[i]; // weights from hidden layer to output layer
             }
-            hiddenLayer.neurons[i].delta = error * output * (1 - output); // derivative of sigmoid
+            hiddenLayer.neurons[i].delta = error * ((output > 0) ? 1 : 0); // derivative of ReLU
+
         }
     }
 }
