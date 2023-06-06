@@ -15,26 +15,28 @@
  *
  */
 
-#include <chrono> 
+#include <chrono>
 #include <algorithm>
 #include <random>
 
 /**
  * Helper function to show training progress bar in the console.
-*/
+ */
 void printProgressBar(int current, int total)
 {
     int percent = (current * 100) / total;
     std::cout << "\rTraining progress: [";
 
     int i = 0;
-    for (; i < percent/2; i++) std::cout << "=";
+    for (; i < percent / 2; i++)
+        std::cout << "=";
 
-    for (; i < 50; i++) std::cout << " ";
+    for (; i < 50; i++)
+        std::cout << " ";
 
     std::cout << "] " << percent << "%   ";
 
-    std::cout.flush(); 
+    std::cout.flush();
 }
 
 class NeuralNetwork
@@ -46,10 +48,10 @@ public:
 
     void backPropagate(std::vector<double> &targetOutputs);
 
-    void updateWeightsAndBiases(double learningRate, double momentum);
+    void updateWeightsAndBiases(double learningRate, double momentum, double epsilon);
 
-    void train(std::vector<std::vector<double>>& trainInputs, std::vector<std::vector<double>>& trainOutputs, std::vector<std::vector<double>>& validInputs, std::vector<std::vector<double>>& validOutputs, double learningRate, int nEpochs, int patience, double momentum);
-    
+    void train(std::vector<std::vector<double>> &trainInputs, std::vector<std::vector<double>> &trainOutputs, std::vector<std::vector<double>> &validInputs, std::vector<std::vector<double>> &validOutputs, double learningRate, int nEpochs, int patience, double momentum, double epsilon);
+
     double calculateMSE(std::vector<std::vector<double>> &inputs, std::vector<std::vector<double>> &targetOutputs);
 
     std::vector<double> predict(const std::vector<double> &inputs);
@@ -109,33 +111,41 @@ void NeuralNetwork::backPropagate(std::vector<double> &targetOutputs)
     }
 }
 
-void NeuralNetwork::updateWeightsAndBiases(double learningRate, double momentum) {
+void NeuralNetwork::updateWeightsAndBiases(double initialLearningRate, double momentum, double epsilon)
+{
     std::vector<double> inputs;
-    if (layers.size() > 1) {
-        for (auto& neuron : layers[layers.size() - 2].neurons) {
+    if (layers.size() > 1)
+    {
+        for (auto &neuron : layers[layers.size() - 2].neurons)
+        {
             inputs.push_back(neuron.output);
         }
     }
 
-    for (auto& layer : layers) {
-        for (auto& neuron : layer.neurons) {
-            for (int i = 0; i < static_cast<int>(neuron.weights.size()); i++) {
-                double weightUpdate = learningRate * neuron.delta * inputs[i];
-                neuron.weights[i] += weightUpdate + momentum * neuron.velocity[i]; // Update with momentum
-                neuron.velocity[i] = weightUpdate; // Update velocity
+    for (auto &layer : layers)
+    {
+        for (auto &neuron : layer.neurons)
+        {
+            for (int i = 0; i < static_cast<int>(neuron.weights.size()); i++)
+            {
+                double gradient = neuron.delta * inputs[i];
+                neuron.velocity[i] = momentum * neuron.velocity[i] + (1 - momentum) * gradient;
+                neuron.velocity[i] += gradient * gradient;
+                double learningRate = initialLearningRate / (std::sqrt(neuron.velocity[i]) + epsilon);
+                neuron.weights[i] += learningRate * neuron.velocity[i];
             }
-            neuron.bias += learningRate * neuron.delta; // Update bias
+            neuron.bias += initialLearningRate * neuron.delta;
         }
     }
 }
 
-void NeuralNetwork::train(std::vector<std::vector<double>> &trainInputs, std::vector<std::vector<double>> &trainOutputs, std::vector<std::vector<double>> &validInputs, std::vector<std::vector<double>> &validOutputs, double learningRate, int nEpochs, int patience, double momentum)
+void NeuralNetwork::train(std::vector<std::vector<double>> &trainInputs, std::vector<std::vector<double>> &trainOutputs, std::vector<std::vector<double>> &validInputs, std::vector<std::vector<double>> &validOutputs, double learningRate, int nEpochs, int patience, double momentum, double epsilon)
 {
     double bestValidLoss = std::numeric_limits<double>::max();
     int epochsWithoutImprovement = 0;
     for (int epoch = 0; epoch < nEpochs; epoch++)
     {
-        //Get generator seed
+        // Get generator seed
         unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
 
         // Shuffle training data
@@ -147,7 +157,7 @@ void NeuralNetwork::train(std::vector<std::vector<double>> &trainInputs, std::ve
         {
             forwardPropagate(trainInputs[i]);
             backPropagate(trainOutputs[i]);
-            updateWeightsAndBiases(learningRate, momentum);
+            updateWeightsAndBiases(learningRate, momentum, epsilon);
         }
 
         // Calculate losses
