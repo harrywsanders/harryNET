@@ -10,6 +10,7 @@
 #include 'neuron.h'
 #include 'layers.h'
 #include 'NeuralNet.h'
+#include 'CommandLine.h'
 
 
 void loadDataset(const std::string& filename, std::vector<std::vector<double>>& inputs, std::vector<std::vector<double>>& outputs) {
@@ -38,41 +39,19 @@ void loadDataset(const std::string& filename, std::vector<std::vector<double>>& 
 }
 
 int main(int argc, char* argv[]) {
-    // Set default values
-    std::string trainingDataPath = "train.csv";
-    std::string testDataPath = "test.csv";
-    int numEpochs = 100;
-    double learningRate = 0.01;
-    int patience = 10;
-
-    // Override with command line arguments
-    if (argc > 1) {
-        trainingDataPath = argv[1];
-    }
-    if (argc > 2) {
-        testDataPath = argv[2];
-    }
-    if (argc > 3) {
-        numEpochs = std::stoi(argv[3]);
-    }
-    if (argc > 4) {
-        learningRate = std::stod(argv[4]);
-    }
-    if (argc > 5) {
-        patience = std::stoi(argv[5]);
-    }
-
     if (argc > 6) {
         std::cout << "Usage: " << argv[0] << " [<training_data>] [<test_data>] [<num_epochs>] [<learning_rate>] [<patience>]" << std::endl;
         return 1;
     }
 
+    Options options = parseCommandLineArgs(argc, argv);
+
     std::vector<std::vector<double>> trainingInputs, trainingOutputs;
     std::vector<std::vector<double>> testInputs, testOutputs;
 
     // Load datasets
-    loadDataset(trainingDataPath, trainingInputs, trainingOutputs);
-    loadDataset(testDataPath, testInputs, testOutputs);
+    loadDataset(options.trainingDataPath, trainingInputs, trainingOutputs);
+    loadDataset(options.testDataPath, testInputs, testOutputs);
 
     // Initialize and train the network
     NeuralNetwork network;
@@ -80,7 +59,7 @@ int main(int argc, char* argv[]) {
     network.layers.push_back(Layer(50));
     network.layers.push_back(Layer(10));
 
-    network.train(trainingInputs, trainingOutputs, testInputs, testOutputs, learningRate, numEpochs, patience);
+    network.train(trainingInputs, trainingOutputs, testInputs, testOutputs, options.learningRate, options.numEpochs, options.patience);
 
     // Measure accuracy on the test set
     double testAccuracy = network.accuracy(testInputs, testOutputs);
@@ -88,5 +67,3 @@ int main(int argc, char* argv[]) {
 
     return 0;
 }
-
-
