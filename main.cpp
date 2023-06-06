@@ -2,6 +2,7 @@
 #include <cmath>
 #include <random>
 #include <iostream>
+#include <algorithm> 
 
 class Neuron
 {
@@ -44,7 +45,7 @@ public:
 
     void updateWeightsAndBiases(double learningRate) {}
 
-    void train(std::vector<std::vector<double>> &trainInputs, std::vector<std::vector<double>> &trainOutputs, std::vector<std::vector<double>> &validInputs, std::vector<std::vector<double>> &validOutputs, double learningRate, int nEpochs);
+    void train(std::vector<std::vector<double>> &trainInputs, std::vector<std::vector<double>> &trainOutputs, std::vector<std::vector<double>> &validInputs, std::vector<std::vector<double>> &validOutputs, double learningRate, int nEpochs, int patience);
 
     double calculateMSE(std::vector<std::vector<double>> &inputs, std::vector<std::vector<double>> &targetOutputs);
 
@@ -125,18 +126,44 @@ void NeuralNetwork::updateWeightsAndBiases(double learningRate)
     }
 }
 
-void NeuralNetwork::train(std::vector<std::vector<double>> &trainInputs, std::vector<std::vector<double>> &trainOutputs, std::vector<std::vector<double>> &validInputs, std::vector<std::vector<double>> &validOutputs, double learningRate, int nEpochs)
+void NeuralNetwork::train(std::vector<std::vector<double>> &trainInputs, std::vector<std::vector<double>> &trainOutputs, std::vector<std::vector<double>> &validInputs, std::vector<std::vector<double>> &validOutputs, double learningRate, int nEpochs, int patience)
 {
+    double bestValidLoss = std::numeric_limits<double>::max();
+    int epochsWithoutImprovement = 0;
     for (int epoch = 0; epoch < nEpochs; epoch++) 
     {
+        // Shuffle training data
+        std::random_shuffle(trainInputs.begin(), trainInputs.end());
+        std::random_shuffle(trainOutputs.begin(), trainOutputs.end());
+
+        // Train on all samples
         for (int i = 0; i < trainInputs.size(); i++) 
         {
             forwardPropagate(trainInputs[i]);
             backPropagate(trainOutputs[i]);
             updateWeightsAndBiases(learningRate);
         }
+
+        // Calculate losses
         double trainLoss = calculateMSE(trainInputs, trainOutputs);
         double validLoss = calculateMSE(validInputs, validOutputs);
+
+        // Check early stopping condition
+        if (validLoss < bestValidLoss) 
+        {
+            bestValidLoss = validLoss;
+            epochsWithoutImprovement = 0;
+        } 
+        else 
+        {
+            epochsWithoutImprovement++;
+            if (epochsWithoutImprovement >= patience) 
+            {
+                std::cout << "Early stopping..." << std::endl;
+                break;
+            }
+        }
+
         std::cout << "Epoch " << epoch << " Training MSE: " << trainLoss << ", Validation MSE: " << validLoss << std::endl;
     }
 }
