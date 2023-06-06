@@ -73,7 +73,7 @@ void NeuralNetwork::forwardPropagate(const std::vector<double> &inputsConst)
             {
                 activation += neuron.weights[i] * inputs[i];
             }
-            neuron.output = 1 / (1 + std::exp(-activation)); // sigmoid activation function
+            neuron.output = std::max(0.0, activation); // ReLU activation function
             outputs.push_back(neuron.output);
         }
         inputs = outputs; // outputs of this layer are inputs to the next layer
@@ -89,7 +89,7 @@ void NeuralNetwork::backPropagate(std::vector<double> &targetOutputs)
         double output = outputLayer.neurons[i].output;
         double target = targetOutputs[i];
         double error = target - output;
-        outputLayer.neurons[i].delta = error * output * (1 - output); // derivative of MSE loss with respect to output * derivative of sigmoid
+        hiddenLayer.neurons[i].delta = error * ((output > 0) ? 1 : 0); // derivative of ReLU
     }
 
     // Calculate hidden layer deltas
