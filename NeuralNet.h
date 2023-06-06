@@ -18,7 +18,24 @@
 #include <chrono> 
 #include <algorithm>
 #include <random>
-#include "CommandLine.h"
+
+/**
+ * Helper function to show training progress bar in the console.
+*/
+void printProgressBar(int current, int total)
+{
+    int percent = (current * 100) / total;
+    std::cout << "\rTraining progress: [";
+
+    int i = 0;
+    for (; i < percent/2; i++) std::cout << "=";
+
+    for (; i < 50; i++) std::cout << " ";
+
+    std::cout << "] " << percent << "%   ";
+
+    std::cout.flush(); 
+}
 
 class NeuralNetwork
 {
