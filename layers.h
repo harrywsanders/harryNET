@@ -12,6 +12,7 @@ class Layer
 {
 public:
     std::vector<Neuron> neurons;
+    std::vector<double> inputs; 
     Layer(size_t nNeurons, size_t nInputsPerNeuron)
     {
         for (size_t i = 0; i < nNeurons; i++)

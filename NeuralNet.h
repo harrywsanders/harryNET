@@ -64,6 +64,7 @@ void NeuralNetwork::forwardPropagate(const std::vector<double> &inputsConst)
     std::vector<double> inputs = inputsConst;
     for (auto &layer : layers)
     {
+        layer.inputs = inputs;
         std::vector<double> outputs;
         for (auto &neuron : layer.neurons)
         {
@@ -92,7 +93,7 @@ void NeuralNetwork::backPropagate(std::vector<double> &targetOutputs)
     }
 
     // Calculate hidden layer deltas
-    for (int l = layers.size() - 2; l >= 0; l--)
+    for (int l = static_cast<int>(layers.size()) - 2; l >= 0; l--)
     {
         Layer &hiddenLayer = layers[l];
         Layer &nextLayer = layers[l + 1];
@@ -111,27 +112,35 @@ void NeuralNetwork::backPropagate(std::vector<double> &targetOutputs)
 
 void NeuralNetwork::updateWeightsAndBiases(double learningRate)
 {
-    std::vector<double> inputs;
-    if (layers.size() > 1)
+    for (int l = 0; l < static_cast<int>(layers.size()); l++)
     {
-        for (auto &neuron : layers[layers.size() - 2].neurons)
+        std::vector<double> inputs;
+        
+        if (l == 0)
         {
-            inputs.push_back(neuron.output);
+            // For the first hidden layer, use the original input values
+            inputs = layers[0].inputs;
         }
-    }
+        else
+        {
+            // For hidden layers and the output layer, use the outputs from the previous layer
+            for (auto &neuron : layers[l - 1].neurons)
+            {
+                inputs.push_back(neuron.output);
+            }
+        }
 
-    for (auto &layer : layers)
-    {
-        for (auto &neuron : layer.neurons)
+        for (auto &neuron : layers[l].neurons)
         {
             for (int i = 0; i < static_cast<int>(neuron.weights.size()); i++)
             {
-                neuron.weights[i] += learningRate * neuron.delta * inputs[i]; // update weight
+                neuron.weights[i] += learningRate * neuron.delta * inputs[i]; 
             }
-            neuron.bias += learningRate * neuron.delta; // update bias
+            neuron.bias += learningRate * neuron.delta; 
         }
     }
 }
+
 
 void NeuralNetwork::train(std::vector<std::vector<double>> &trainInputs, std::vector<std::vector<double>> &trainOutputs, std::vector<std::vector<double>> &validInputs, std::vector<std::vector<double>> &validOutputs, double learningRate, int nEpochs, int patience)
 {
