@@ -32,8 +32,8 @@ harryNET is a straightforward implementation of a neural network that allows you
 > - **Optimization Techniques**: Explore advanced optimization techniques like momentum, adaptive learning rate, or weight decay to improve the network's performance.
 > - **GPU Acceleration**: Implement GPU usage through CUDA or otherwise to speed up the performance.
 > - **Diverse Activation Functions**: Incorporate different activation functions such as ReLU, tanh, or softmax to expand the network's capabilities and experiment with their impact on learning.
-> - **Regularization Methods**: Implement techniques like dropout or L1/L2 regularization to enhance generalization and prevent overfitting.
-> - **Convolutional Neural Networks**: Extend the network architecture to support convolutional layers and pooling layers, enabling the handling of image-based datasets.
+> - **Regularization Methods**: Implement techniques like L1/L2 regularization to enhance generalization and prevent overfitting.
+> - **Convolutional Neural Networks**: Extend the network architecture to support convolutional layers and pooling layers.
 > - **Hyperparameter Tuning**: Develop a systematic hyperparameter tuning mechanism, like grid search or random search, to find optimal values for parameters such as learning rate, number of hidden layers, or number of neurons per layer.
 > - **Additional Datasets**: Test the network's performance on various datasets to evaluate its ability to generalize across different problem domains.
 > - **Model Persistence**: Implement functionality to save and load trained models, allowing easy reuse and transferability across different sessions or applications.
