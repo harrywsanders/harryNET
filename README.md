@@ -1,6 +1,6 @@
 # harryNET
 
-> Hey there! Welcome to harryNET, a simple neural network built in C++! I created this network with the goal of using it as an educational tool on the base function of neural networks, and am continuing to update it with new features. 
+> Hey there! Welcome to harryNET, a simple neural network built in C++! I created this network to work through and deepen my understanding of neural networks, and to have a platform to constantly improve as my knowledge grows.
 
 ## What's harryNET?
 
