@@ -18,6 +18,7 @@
 #include <chrono> 
 #include <algorithm>
 #include <random>
+#include "CommandLine.h"
 
 class NeuralNetwork
 {
@@ -155,9 +156,10 @@ void NeuralNetwork::train(std::vector<std::vector<double>> &trainInputs, std::ve
                 break;
             }
         }
-
+        printProgressBar(epoch + 1, nEpochs);
         std::cout << "Epoch " << epoch << " Training MSE: " << trainLoss << ", Validation MSE: " << validLoss << std::endl;
     }
+    std::cout << std::endl;
 }
 
 double NeuralNetwork::calculateMSE(std::vector<std::vector<double>> &inputs, std::vector<std::vector<double>> &targetOutputs)

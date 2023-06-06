@@ -24,3 +24,18 @@ Options parseCommandLineArgs(int argc, char* argv[]) {
 
     return options;
 }
+
+void printProgressBar(int current, int total)
+{
+    int percent = (current * 100) / total;
+    std::cout << "\rTraining progress: [";
+
+    int i = 0;
+    for (; i < percent/2; i++) std::cout << "=";
+
+    for (; i < 50; i++) std::cout << " ";
+
+    std::cout << "] " << percent << "%   ";
+
+    std::cout.flush(); 
+}
