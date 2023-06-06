@@ -18,6 +18,9 @@
 #include <chrono> 
 #include <algorithm>
 #include <random>
+#include <fstream>
+#include <iostream>
+#include "layers.h"
 
 /**
  * Helper function to show training progress bar in the console.
