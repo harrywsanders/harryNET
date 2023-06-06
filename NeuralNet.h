@@ -41,8 +41,9 @@ public:
 
 // Implementations begin here:
 
-void NeuralNetwork::forwardPropagate(const std::vector<double> &inputs)
+void NeuralNetwork::forwardPropagate(const std::vector<double> &inputsConst)
 {
+    std::vector<double> inputs = inputsConst;
     for (auto &layer : layers)
     {
         std::vector<double> outputs;
