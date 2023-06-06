@@ -16,6 +16,9 @@
 void loadDataset(const std::string& filename, std::vector<std::vector<double>>& inputs, std::vector<std::vector<double>>& outputs) {
     std::ifstream file(filename);
     std::string line;
+
+    std::getline(file, line);
+
     while (getline(file, line)) {
         std::vector<double> input;
         std::vector<double> output(10, 0.0);
@@ -50,18 +53,25 @@ int main(int argc, char* argv[]) {
     std::vector<std::vector<double>> testInputs, testOutputs;
 
     // Load datasets
+    cout << "Loading datasets..." << endl;
     loadDataset(options.trainingDataPath, trainingInputs, trainingOutputs);
     loadDataset(options.testDataPath, testInputs, testOutputs);
+    cout << "Done." << endl;
 
     // Initialize and train the network
     NeuralNetwork network;
+    cout << "Initializing network..." << endl;
     network.layers.push_back(Layer(784, 784));
     network.layers.push_back(Layer(50, 784));
     network.layers.push_back(Layer(10, 50));
+    cout << "Done." << endl;
 
+    cout << "Training network..." << endl;
     network.train(trainingInputs, trainingOutputs, testInputs, testOutputs, options.learningRate, options.numEpochs, options.patience);
+    cout << "Done." << endl;
 
     // Measure accuracy on the test set
+    cout << "Measuring accuracy on test set..." << endl;
     double testAccuracy = network.accuracy(testInputs, testOutputs);
     std::cout << "Test accuracy: " << testAccuracy << std::endl;
 
