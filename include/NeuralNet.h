@@ -55,6 +55,10 @@ public:
     std::vector<double> predict(const std::vector<double> &inputs);
 
     double accuracy(const std::vector<std::vector<double>> &inputs, const std::vector<std::vector<double>> &targetOutputs);
+
+    void save(const std::string &filename);
+
+    void load(const std::string &filename);
 };
 
 // Implementations begin here:
@@ -231,4 +235,61 @@ double NeuralNetwork::accuracy(const std::vector<std::vector<double>> &inputs, c
     }
 
     return static_cast<double>(correctCount) / inputs.size();
+}
+
+void NeuralNetwork::save(const std::string &filename)
+{
+    std::ofstream outFile(filename);
+    if (!outFile)
+    {
+        std::cerr << "Error opening output file: " << filename << std::endl;
+        return;
+    }
+
+    for (const auto &layer : layers)
+    {
+        for (const auto &neuron : layer.neurons)
+        {
+            for (const auto &weight : neuron.weights)
+            {
+                outFile << weight << " ";
+            }
+            outFile << neuron.bias << std::endl;
+        }
+        outFile << std::endl;
+    }
+
+    outFile.close();
+}
+
+void NeuralNetwork::load(const std::string &filename)
+{
+    std::ifstream inFile(filename);
+    if (!inFile)
+    {
+        std::cerr << "Error opening input file: " << filename << std::endl;
+        return;
+    }
+
+    for (auto &layer : layers)
+    {
+        for (auto &neuron : layer.neurons)
+        {
+            for (auto &weight : neuron.weights)
+            {
+                if (!(inFile >> weight))
+                {
+                    std::cerr << "Error reading weights from file: " << filename << std::endl;
+                    return;
+                }
+            }
+            if (!(inFile >> neuron.bias))
+            {
+                std::cerr << "Error reading bias from file: " << filename << std::endl;
+                return;
+            }
+        }
+    }
+
+    inFile.close();
 }
