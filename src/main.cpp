@@ -8,7 +8,6 @@
 #include <vector>
 #include <string>
 #include "../include/neuron.h"
-#include "../include/layers.h"
 #include "../include/NeuralNet.h"
 #include "../include/CommandLine.h"
 
@@ -42,8 +41,8 @@ void loadDataset(const std::string& filename, std::vector<std::vector<double>>& 
 }
 
 int main(int argc, char* argv[]) {
-    if (argc > 6) {
-        std::cout << "Usage: " << argv[0] << " [<training_data>] [<test_data>] [<num_epochs>] [<learning_rate>] [<patience>]" << std::endl;
+    if (argc > 7) {
+        std::cout << "Usage: " << argv[0] << " [<training_data>] [<test_data>] [<num_epochs>] [<learning_rate>] [<patience>] [<batch_size>]" << std::endl;
         return 1;
     }
 
@@ -67,7 +66,7 @@ int main(int argc, char* argv[]) {
     std::cout << "Done." << std::endl;
 
     std::cout << "Training network..." << std::endl;
-    network.train(trainingInputs, trainingOutputs, testInputs, testOutputs, options.learningRate, options.numEpochs, options.patience);
+    network.train(trainingInputs, trainingOutputs, testInputs, testOutputs, options.learningRate, options.numEpochs, options.batchSize, options.patience);
     std::cout << "Done." << std::endl;
 
     // Measure accuracy on the test set

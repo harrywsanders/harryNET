@@ -1,2 +1,3 @@
-obj/main.o: src/main.cpp include/neuron.h include/layers.h \
-  include/NeuralNet.h include/CommandLine.h
+obj/main.o: src/main.cpp src/../include/neuron.h \
+  src/../include/NeuralNet.h include/layers.h \
+  src/../include/CommandLine.h

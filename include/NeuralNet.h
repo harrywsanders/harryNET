@@ -15,7 +15,7 @@
  *
  */
 
-#include <chrono> 
+#include <chrono>
 #include <algorithm>
 #include <random>
 #include <fstream>
@@ -24,20 +24,22 @@
 
 /**
  * Helper function to show training progress bar in the console.
-*/
+ */
 void printProgressBar(int current, int total)
 {
     int percent = (current * 100) / total;
     std::cout << "\rTraining progress: [";
 
     int i = 0;
-    for (; i < percent/2; i++) std::cout << "=";
+    for (; i < percent / 2; i++)
+        std::cout << "=";
 
-    for (; i < 50; i++) std::cout << " ";
+    for (; i < 50; i++)
+        std::cout << " ";
 
     std::cout << "] " << percent << "%   ";
 
-    std::cout.flush(); 
+    std::cout.flush();
 }
 
 class NeuralNetwork
@@ -51,7 +53,7 @@ public:
 
     void updateWeightsAndBiases(double learningRate);
 
-    void train(std::vector<std::vector<double>> &trainInputs, std::vector<std::vector<double>> &trainOutputs, std::vector<std::vector<double>> &validInputs, std::vector<std::vector<double>> &validOutputs, double learningRate, int nEpochs, int patience);
+    void train(std::vector<std::vector<double>> &trainInputs, std::vector<std::vector<double>> &trainOutputs, std::vector<std::vector<double>> &validInputs, std::vector<std::vector<double>> &validOutputs, double learningRate, int nEpochs, int batchSize, int patience);
 
     double calculateMSE(std::vector<std::vector<double>> &inputs, std::vector<std::vector<double>> &targetOutputs);
 
@@ -122,7 +124,7 @@ void NeuralNetwork::updateWeightsAndBiases(double learningRate)
     for (int l = 0; l < static_cast<int>(layers.size()); l++)
     {
         std::vector<double> inputs;
-        
+
         if (l == 0)
         {
             // For the first hidden layer, use the original input values
@@ -141,40 +143,44 @@ void NeuralNetwork::updateWeightsAndBiases(double learningRate)
         {
             for (int i = 0; i < static_cast<int>(neuron.weights.size()); i++)
             {
-                neuron.weights[i] += learningRate * neuron.delta * inputs[i]; 
+                neuron.weights[i] += learningRate * neuron.delta * inputs[i];
             }
-            neuron.bias += learningRate * neuron.delta; 
+            neuron.bias += learningRate * neuron.delta;
         }
     }
 }
 
-
-void NeuralNetwork::train(std::vector<std::vector<double>> &trainInputs, std::vector<std::vector<double>> &trainOutputs, std::vector<std::vector<double>> &validInputs, std::vector<std::vector<double>> &validOutputs, double learningRate, int nEpochs, int patience)
+void NeuralNetwork::train(std::vector<std::vector<double>> &trainInputs, std::vector<std::vector<double>> &trainOutputs, std::vector<std::vector<double>> &validInputs, std::vector<std::vector<double>> &validOutputs, double learningRate, int nEpochs, int batchSize, int patience)
 {
     double bestValidLoss = std::numeric_limits<double>::max();
     int epochsWithoutImprovement = 0;
+
     for (int epoch = 0; epoch < nEpochs; epoch++)
     {
-        //Get generator seed
         unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
 
-        // Shuffle training data
         std::shuffle(trainInputs.begin(), trainInputs.end(), std::default_random_engine(seed));
         std::shuffle(trainOutputs.begin(), trainOutputs.end(), std::default_random_engine(seed));
 
-        // Train on all samples
-        for (int i = 0; i < static_cast<int>(trainInputs.size()); i++)
+        for (int i = 0; i < static_cast<int>(trainInputs.size()); i += batchSize)
         {
-            forwardPropagate(trainInputs[i]);
-            backPropagate(trainOutputs[i]);
-            updateWeightsAndBiases(learningRate);
+            auto batchEndInputs = std::min(trainInputs.begin() + i + batchSize, trainInputs.end());
+            auto batchEndOutputs = std::min(trainOutputs.begin() + i + batchSize, trainOutputs.end());
+
+            std::vector<std::vector<double>> miniBatchInputs(trainInputs.begin() + i, batchEndInputs);
+            std::vector<std::vector<double>> miniBatchOutputs(trainOutputs.begin() + i, batchEndOutputs);
+
+            for (int j = 0; j < static_cast<int>(miniBatchInputs.size()); j++)
+            {
+                forwardPropagate(miniBatchInputs[j]);
+                backPropagate(miniBatchOutputs[j]);
+                updateWeightsAndBiases(learningRate);
+            }
         }
 
-        // Calculate losses
         double trainLoss = calculateMSE(trainInputs, trainOutputs);
         double validLoss = calculateMSE(validInputs, validOutputs);
 
-        // Check early stopping condition
         if (validLoss < bestValidLoss)
         {
             bestValidLoss = validLoss;
