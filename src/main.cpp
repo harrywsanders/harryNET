@@ -7,10 +7,10 @@
 #include <sstream>
 #include <vector>
 #include <string>
-#include "neuron.h"
-#include "layers.h"
-#include "NeuralNet.h"
-#include "CommandLine.h"
+#include "../include/neuron.h"
+#include "../include/layers.h"
+#include "../include/NeuralNet.h"
+#include "../include/CommandLine.h"
 
 
 void loadDataset(const std::string& filename, std::vector<std::vector<double>>& inputs, std::vector<std::vector<double>>& outputs) {
@@ -74,6 +74,11 @@ int main(int argc, char* argv[]) {
     std::cout << "Measuring accuracy on test set..." << std::endl;
     double testAccuracy = network.accuracy(testInputs, testOutputs);
     std::cout << "Test accuracy: " << testAccuracy << std::endl;
+
+    //Save the network
+    std::cout << "Saving network..." << std::endl;
+    network.save("network.txt");
+    std::cout << "Done." << std::endl;
 
     return 0;
 }
