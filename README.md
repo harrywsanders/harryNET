@@ -4,7 +4,7 @@
 
 ## What's harryNET?
 
-harryNET is a straightforward implementation of a neural network that allows you to build and train your own models. It's lightweight, simple, and constantly improving through updates! Currently, it's running at around 91.5% accuracy on the MNIST classification task.
+harryNET is a straightforward implementation of a neural network that allows you to build and train your own models. It's lightweight, simple, and constantly improving through updates! Currently, it's running at around 91.5% accuracy on the MNIST classification task using the default parameters.
 
 ## Usage
 
@@ -20,11 +20,12 @@ harryNET is a straightforward implementation of a neural network that allows you
 > - `<num_epochs>` (optional): Number of epochs for training. Default: 100.
 > - `<learning_rate>` (optional): Learning rate for weight updates. Default: 0.01.
 > - `<patience>` (optional): Patience parameter for early stopping. Default: 10.
+> - `<batch_size>` (optional): Parameter for batching. Default: 32.
 
 > ### Example Usage
 > 
 > ```
-> ./bin/neural_net.exe mnist_train.csv mnist_test.csv 200 0.001 20
+> ./bin/neural_net.exe mnist_train.csv mnist_test.csv 200 0.001 20 10
 > ```
 
 ## Goals for the Future [in order of ambition]
