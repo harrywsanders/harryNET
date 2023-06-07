@@ -4,7 +4,7 @@
 
 ## What's harryNET?
 
-harryNET is a straightforward implementation of a neural network that allows you to build and train your own models. It's lightweight, simple, and constantly improving through updates!
+harryNET is a straightforward implementation of a neural network that allows you to build and train your own models. It's lightweight, simple, and constantly improving through updates! Currently, it's running at around 91.5% accuracy on the MNIST classification task.
 
 ## Usage
 
