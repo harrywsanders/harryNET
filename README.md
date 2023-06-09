@@ -11,7 +11,7 @@ harryNET is a straightforward implementation of a neural network that allows you
 1. Clone the repository: `git clone https://github.com/your_username/harryNET.git`
 2. Navigate to the project directory: `cd harryNET`
 3. Compile the code: `make`
-4. Run the program: `./bin/neural_net.exe [<training_data>] [<test_data>] [<num_epochs>] [<learning_rate>] [<batch+size>] [<patience>]`
+4. Run the program: `./bin/neural_net.exe [<training_data>] [<test_data>] [<num_epochs>] [<learning_rate>] [<batch_size>] [<patience>]`
 
 > ### Command-line Arguments
 > 
@@ -19,8 +19,8 @@ harryNET is a straightforward implementation of a neural network that allows you
 > - `<test_data>`: Path to the test data file in CSV format.
 > - `<num_epochs>` (optional): Number of epochs for training. Default: 100.
 > - `<learning_rate>` (optional): Learning rate for weight updates. Default: 0.01.
-> - `<patience>` (optional): Patience parameter for early stopping. Default: 10.
 > - `<batch_size>` (optional): Parameter for batching. Default: 32.
+> - `<patience>` (optional): Patience parameter for early stopping. Default: 10.
 
 > ### Example Usage
 > 
