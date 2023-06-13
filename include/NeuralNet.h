@@ -21,7 +21,6 @@
 #include <fstream>
 #include <iostream>
 #include "layers.h"
-#include <Eigen/Dense>
 
 /**
  * Helper function to show training progress bar in the console.
