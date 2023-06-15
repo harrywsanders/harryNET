@@ -4,6 +4,7 @@
  * - A bias, which is also initialized using He initialization.
  * - An output value, which is computed during the forward propagation step.
  * - A delta value, which is computed during the backward propagation step.
+ * - Values for moments for Adam implementation. 
  *
  * The neuron uses the sigmoid function as its activation function. However, this class does not include methods for computing the activation function or its derivative. These computations are performed in the NeuralNetwork class.
  *
@@ -23,11 +24,16 @@ public:
         for (size_t i = 0; i < nInputs; i++)
         {
             weights.push_back(distribution(generator));
+            m_weights.push_back(0.0); // Initialize first moment vector
+            v_weights.push_back(0.0); // Initialize second moment vector
         }
         bias = distribution(generator);
+        m_bias = 0.0; // Initialize first moment for bias
+        v_bias = 0.0; // Initialize second moment for bias
     }
-    std::vector<double> weights;
-    double bias;
+    std::vector<double> weights, m_weights, v_weights;
+    double bias, m_bias, v_bias;
     double output;
     double delta;
 };
+

@@ -51,7 +51,7 @@ public:
 
     void backPropagate(std::vector<double> &targetOutputs);
 
-    void updateWeightsAndBiases(double learningRate);
+    void updateWeightsAndBiases(double learningRate, int t,  double beta1 = 0.9, double beta2 = 0.999, double epsilon = 1e-8);
 
     void train(std::vector<std::vector<double>> &trainInputs, std::vector<std::vector<double>> &trainOutputs, std::vector<std::vector<double>> &validInputs, std::vector<std::vector<double>> &validOutputs, double learningRate, int nEpochs, int batchSize, int patience);
 
@@ -118,8 +118,7 @@ void NeuralNetwork::backPropagate(std::vector<double> &targetOutputs)
         }
     }
 }
-
-void NeuralNetwork::updateWeightsAndBiases(double learningRate)
+void NeuralNetwork::updateWeightsAndBiases(double learningRate, int t, double beta1, double beta2, double epsilon)
 {
     for (int l = 0; l < static_cast<int>(layers.size()); l++)
     {
@@ -143,17 +142,53 @@ void NeuralNetwork::updateWeightsAndBiases(double learningRate)
         {
             for (int i = 0; i < static_cast<int>(neuron.weights.size()); i++)
             {
-                neuron.weights[i] += learningRate * neuron.delta * inputs[i];
+                // Update biased first moment estimate for weights
+                neuron.m_weights[i] = beta1 * neuron.m_weights[i] + (1 - beta1) * neuron.delta * inputs[i];
+                // Update biased second raw moment estimate for weights
+                neuron.v_weights[i] = beta2 * neuron.v_weights[i] + (1 - beta2) * pow(neuron.delta * inputs[i], 2);
+                // Compute bias-corrected first moment estimate for weights
+                double m_hat_weight = neuron.m_weights[i] / (1 - pow(beta1, t));
+                // Compute bias-corrected second raw moment estimate for weights
+                double v_hat_weight = neuron.v_weights[i] / (1 - pow(beta2, t));
+                // Update weights
+                double weightUpdate = learningRate * m_hat_weight / (sqrt(v_hat_weight) + epsilon);
+                if (std::isnan(weightUpdate))
+                {
+                    std::cout << "NaN detected in weight update. Skipping weight update." << std::endl;
+                }
+                else
+                {
+                    neuron.weights[i] += weightUpdate;
+                }
             }
-            neuron.bias += learningRate * neuron.delta;
+            // Update biased first moment estimate for bias
+            neuron.m_bias = beta1 * neuron.m_bias + (1 - beta1) * neuron.delta;
+            // Update biased second raw moment estimate for bias
+            neuron.v_bias = beta2 * neuron.v_bias + (1 - beta2) * pow(neuron.delta, 2);
+            // Compute bias-corrected first momentestimate for bias
+            double m_hat_bias = neuron.m_bias / (1 - pow(beta1, t));
+            // Compute bias-corrected second raw moment estimate for bias
+            double v_hat_bias = neuron.v_bias / (1 - pow(beta2, t));
+            // Update bias
+            double biasUpdate = learningRate * m_hat_bias / (sqrt(v_hat_bias) + epsilon);
+            if (std::isnan(biasUpdate))
+            {
+                std::cout << "NaN detected in bias update. Skipping bias update." << std::endl;
+            }
+            else
+            {
+                neuron.bias += biasUpdate;
+            }
         }
     }
 }
+
 
 void NeuralNetwork::train(std::vector<std::vector<double>> &trainInputs, std::vector<std::vector<double>> &trainOutputs, std::vector<std::vector<double>> &validInputs, std::vector<std::vector<double>> &validOutputs, double learningRate, int nEpochs, int batchSize, int patience)
 {
     double bestValidLoss = std::numeric_limits<double>::max();
     int epochsWithoutImprovement = 0;
+    int t = 1; // Initialize timestep for Adam optimizer
 
     for (int epoch = 0; epoch < nEpochs; epoch++)
     {
@@ -174,7 +209,8 @@ void NeuralNetwork::train(std::vector<std::vector<double>> &trainInputs, std::ve
             {
                 forwardPropagate(miniBatchInputs[j]);
                 backPropagate(miniBatchOutputs[j]);
-                updateWeightsAndBiases(learningRate);
+                updateWeightsAndBiases(learningRate, t,  0.9, 0.999, 1e-8);; 
+                t++; 
             }
         }
 
@@ -200,6 +236,7 @@ void NeuralNetwork::train(std::vector<std::vector<double>> &trainInputs, std::ve
     }
     std::cout << std::endl;
 }
+
 
 double NeuralNetwork::calculateMSE(std::vector<std::vector<double>> &inputs, std::vector<std::vector<double>> &targetOutputs)
 {
