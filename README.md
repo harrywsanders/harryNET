@@ -29,12 +29,11 @@ harryNET is a straightforward implementation of a neural network that allows you
 > ```
 
 ## Goals for the Future [in order of ambition]
-- [ ] **Visualization**: Implement a visualization tool to analyze the network's learning progress, such as plotting loss curves. Not sure if this provides anything meaningful, though.
 - [x] **Model Persistence**: Implement functionality to save and load trained models, allowing easy reuse and transferability across different sessions or applications.
 - [ ] **Hyperparameter Tuning**: Develop a systematic hyperparameter tuning mechanism, like grid search or random search, to find optimal values for parameters such as learning rate, number of hidden layers, or number of neurons per layer.
 - [ ] **Diverse Activation Functions**: Incorporate different activation functions, like  ReLU, tanh, or softmax to expand the network's capabilities.
 - [ ] **Regularization Methods**: Implement a technique like L1/L2 regularization to enhance generalization and prevent overfitting.
-- [ ] **Optimization Techniques**: Explore advanced optimization techniques like momentum, adaptive learning rate, or weight decay to improve the network's performance.
+- [x] **Optimization Techniques**: Explore advanced optimization techniques like momentum, adaptive learning rate, or weight decay to improve the network's performance.
 - [ ] **GPU Acceleration**: Implement GPU usage through CUDA or otherwise to speed up the performance.
 - [ ] **Convolutional Neural Networks**: Extend the network architecture to support convolutional layers and pooling layers.
 
