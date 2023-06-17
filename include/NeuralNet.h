@@ -182,9 +182,6 @@ double NeuralNetwork::accuracy(const std::vector<Eigen::VectorXd> &inputs, const
     int correctCount = 0;
     for (int i = 0; i < static_cast<int>(inputs.size()); i++) {
         Eigen::VectorXd output = predict(inputs[i]);
-        // Assuming the output and target output are one-hot encoded,
-        // the predicted class is the index of the maximum element in the output vector,
-        // and the actual class is the index of the maximum element in the target output vector.
         int predictedClass = std::distance(output.data(), std::max_element(output.data(), output.data() + output.size()));
         int actualClass = std::distance(targetOutputs[i].data(), std::max_element(targetOutputs[i].data(), targetOutputs[i].data() + targetOutputs[i].size()));
         if (predictedClass == actualClass) {
