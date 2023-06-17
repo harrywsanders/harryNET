@@ -7,7 +7,6 @@
 #include <sstream>
 #include <vector>
 #include <string>
-#include "../include/neuron.h"
 #include "../include/NeuralNet.h"
 #include "../include/CommandLine.h"
 
@@ -48,36 +47,54 @@ int main(int argc, char* argv[]) {
 
     Options options = parseCommandLineArgs(argc, argv);
 
-    std::vector<std::vector<double>> trainingInputs, trainingOutputs;
-    std::vector<std::vector<double>> testInputs, testOutputs;
+    std::vector<std::vector<double>> trainInputsRaw, trainOutputsRaw;
+    std::vector<std::vector<double>> testInputsRaw, testOutputsRaw;
 
-    // Load datasets
-    std::cout << "Loading datasets..." << std::endl;
-    loadDataset(options.trainingDataPath, trainingInputs, trainingOutputs);
-    loadDataset(options.testDataPath, testInputs, testOutputs);
-    std::cout << "Done." << std::endl;
+    loadDataset(options.trainingDataPath, trainInputsRaw, trainOutputsRaw);
+    loadDataset(options.testDataPath, testInputsRaw, testOutputsRaw);
 
-    // Initialize and train the network
-    NeuralNetwork network;
-    std::cout << "Initializing network..." << std::endl;
-    network.layers.push_back(Layer(784, 784));
-    network.layers.push_back(Layer(50, 784));
-    network.layers.push_back(Layer(10, 50));
-    std::cout << "Done." << std::endl;
+    std::vector<Eigen::VectorXd> trainInputs, trainOutputs;
+    std::vector<Eigen::VectorXd> testInputs, testOutputs;
 
-    std::cout << "Training network..." << std::endl;
-    network.train(trainingInputs, trainingOutputs, testInputs, testOutputs, options.learningRate, options.numEpochs, options.batchSize, options.patience);
-    std::cout << "Done." << std::endl;
+    for (const auto &v : trainInputsRaw) {
+        trainInputs.push_back(Eigen::Map<const Eigen::VectorXd>(v.data(), v.size()));
+    }
 
-    // Measure accuracy on the test set
-    std::cout << "Measuring accuracy on test set..." << std::endl;
-    double testAccuracy = network.accuracy(testInputs, testOutputs);
-    std::cout << "Test accuracy: " << testAccuracy << std::endl;
+    for (const auto &v : trainOutputsRaw) {
+        trainOutputs.push_back(Eigen::Map<const Eigen::VectorXd>(v.data(), v.size()));
+    }
 
-    //Save the network
-    std::cout << "Saving network..." << std::endl;
-    network.save("network.txt");
-    std::cout << "Done." << std::endl;
+    for (const auto &v : testInputsRaw) {
+        testInputs.push_back(Eigen::Map<const Eigen::VectorXd>(v.data(), v.size()));
+    }
+
+    for (const auto &v : testOutputsRaw) {
+        testOutputs.push_back(Eigen::Map<const Eigen::VectorXd>(v.data(), v.size()));
+    }
+
+    // Create neural network
+    NeuralNetwork nn;
+    // Initialize each layer
+    size_t nInputs = 784;
+    size_t nNeuronsHidden1 = 512;
+    size_t nNeuronsHidden2 = 256;
+    size_t nNeuronsOutput = 10; 
+    Layer inputLayer(nInputs, nInputs); 
+    Layer hiddenLayer1(nNeuronsHidden1, nInputs); 
+    Layer hiddenLayer2(nNeuronsHidden2, nNeuronsHidden1); 
+    Layer outputLayer(nNeuronsOutput, nNeuronsHidden2);
+
+    nn.layers.push_back(inputLayer);
+    nn.layers.push_back(hiddenLayer1);
+    nn.layers.push_back(hiddenLayer2);
+    nn.layers.push_back(outputLayer);
+
+    // Train the network
+    nn.train(trainInputs, trainOutputs, testInputs, testOutputs, options.learningRate, options.numEpochs, options.batchSize, options.patience);
+
+    // Evaluate accuracy on test data
+    double accuracy = nn.accuracy(testInputs, testOutputs);
+    std::cout << "Test accuracy: " << accuracy << std::endl;
 
     return 0;
 }

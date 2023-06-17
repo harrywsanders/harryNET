@@ -47,295 +47,149 @@ class NeuralNetwork
 public:
     std::vector<Layer> layers;
 
-    void forwardPropagate(const std::vector<double> &inputs);
+    void forwardPropagate(const Eigen::VectorXd &inputs);
 
-    void backPropagate(std::vector<double> &targetOutputs);
+    void backPropagate(Eigen::VectorXd &targetOutputs);
 
     void updateWeightsAndBiases(double learningRate, int t,  double beta1 = 0.9, double beta2 = 0.999, double epsilon = 1e-8);
 
-    void train(std::vector<std::vector<double>> &trainInputs, std::vector<std::vector<double>> &trainOutputs, std::vector<std::vector<double>> &validInputs, std::vector<std::vector<double>> &validOutputs, double learningRate, int nEpochs, int batchSize, int patience);
+    void train(std::vector<Eigen::VectorXd> &trainInputs, std::vector<Eigen::VectorXd> &trainOutputs, std::vector<Eigen::VectorXd> &validInputs, std::vector<Eigen::VectorXd> &validOutputs, double learningRate, int nEpochs, int batchSize, int patience);
 
-    double calculateMSE(std::vector<std::vector<double>> &inputs, std::vector<std::vector<double>> &targetOutputs);
+    double calculateMSE(std::vector<Eigen::VectorXd> &inputs, std::vector<Eigen::VectorXd> &targetOutputs);
 
-    std::vector<double> predict(const std::vector<double> &inputs);
+    Eigen::VectorXd predict(const Eigen::VectorXd &inputs);
 
-    double accuracy(const std::vector<std::vector<double>> &inputs, const std::vector<std::vector<double>> &targetOutputs);
+    double accuracy(const std::vector<Eigen::VectorXd> &inputs, const std::vector<Eigen::VectorXd> &targetOutputs);
 
     void save(const std::string &filename);
 
     void load(const std::string &filename);
 };
 
-// Implementations begin here:
-
-void NeuralNetwork::forwardPropagate(const std::vector<double> &inputsConst)
-{
-    std::vector<double> inputs = inputsConst;
-    for (auto &layer : layers)
+void NeuralNetwork::forwardPropagate(const Eigen::VectorXd &inputs) {
+    layers[0].output = inputs;
+    for (size_t i = 1; i < layers.size(); i++)
     {
-        layer.inputs = inputs;
-        std::vector<double> outputs;
-        for (auto &neuron : layer.neurons)
-        {
-            double activation = neuron.bias;
-            for (int i = 0; i < static_cast<int>(neuron.weights.size()); i++)
-            {
-                activation += neuron.weights[i] * inputs[i];
-            }
-            neuron.output = 1 / (1 + std::exp(-activation)); // sigmoid activation function
-            outputs.push_back(neuron.output);
-        }
-        inputs = outputs; // outputs of this layer are inputs to the next layer
+        layers[i].output = layers[i].weights * layers[i - 1].output + layers[i].bias;
+
+        // apply sigmoid activation function
+        layers[i].output = 1.0 / (1.0 + (-layers[i].output).array().exp());
     }
 }
 
-void NeuralNetwork::backPropagate(std::vector<double> &targetOutputs)
+void NeuralNetwork::backPropagate(Eigen::VectorXd &targetOutputs)
 {
-    // Calculate output layer deltas
+    // calculate delta for output layer
+
     Layer &outputLayer = layers.back();
-    for (int i = 0; i < static_cast<int>(outputLayer.neurons.size()); i++)
+    outputLayer.delta = outputLayer.output.array() - targetOutputs.array();
+    // calculate delta for hidden layers
+    for (int i = layers.size() - 2; i >= 0; i--)
     {
-        double output = outputLayer.neurons[i].output;
-        double target = targetOutputs[i];
-        double error = target - output;
-        outputLayer.neurons[i].delta = error * output * (1 - output); // derivative of MSE loss with respect to output * derivative of sigmoid
-    }
-
-    // Calculate hidden layer deltas
-    for (int l = static_cast<int>(layers.size()) - 2; l >= 0; l--)
-    {
-        Layer &hiddenLayer = layers[l];
-        Layer &nextLayer = layers[l + 1];
-        for (int i = 0; i < static_cast<int>(hiddenLayer.neurons.size()); i++)
-        {
-            double output = hiddenLayer.neurons[i].output;
-            double error = 0.0;
-            for (int j = 0; j < static_cast<int>(nextLayer.neurons.size()); j++)
-            {
-                error += nextLayer.neurons[j].delta * nextLayer.neurons[j].weights[i]; // weights from hidden layer to output layer
-            }
-            hiddenLayer.neurons[i].delta = error * output * (1 - output); // derivative of sigmoid
-        }
+        Layer &hiddenLayer = layers[i];
+        Layer &nextLayer = layers[i + 1];
+        hiddenLayer.delta = (nextLayer.weights.transpose() * nextLayer.delta).array() * (hiddenLayer.output.array() * (1.0 - hiddenLayer.output.array()));
     }
 }
+
 void NeuralNetwork::updateWeightsAndBiases(double learningRate, int t, double beta1, double beta2, double epsilon)
 {
-    for (int l = 0; l < static_cast<int>(layers.size()); l++)
+    for (int i = 1; i < static_cast<int>(layers.size()); ++i)
     {
-        std::vector<double> inputs;
+        Layer &layer = layers[i];
+        Eigen::MatrixXd weight_gradients = layer.delta * layers[i - 1].output.transpose(); // Use output from previous layer
 
-        if (l == 0)
-        {
-            // For the first hidden layer, use the original input values
-            inputs = layers[0].inputs;
-        }
-        else
-        {
-            // For hidden layers and the output layer, use the outputs from the previous layer
-            for (auto &neuron : layers[l - 1].neurons)
-            {
-                inputs.push_back(neuron.output);
+        layer.m_weights = beta1 * layer.m_weights + (1 - beta1) * weight_gradients;
+        layer.v_weights = beta2 * layer.v_weights.array() + (1 - beta2) * weight_gradients.array().square();
+
+        // Bias correction for weights
+        Eigen::MatrixXd m_weights_hat = layer.m_weights.array() / (1 - std::pow(beta1, t));
+        Eigen::MatrixXd v_weights_hat = layer.v_weights.array() / (1 - std::pow(beta2, t));
+
+        // Update weights
+        layer.weights = layer.weights.array() - learningRate * m_weights_hat.array() / (v_weights_hat.array().sqrt() + epsilon);
+
+        // Calculate the first and second moment for biases
+        layer.m_bias = beta1 * layer.m_bias.array() + (1 - beta1) * layer.delta.array();
+        layer.v_bias = beta2 * layer.v_bias.array() + (1 - beta2) * layer.delta.array().square();
+
+        // Bias correction for biases
+        Eigen::VectorXd m_bias_hat = layer.m_bias.array() / (1 - std::pow(beta1, t));
+        Eigen::VectorXd v_bias_hat = layer.v_bias.array() / (1 - std::pow(beta2, t));
+
+        // Update biases
+        layer.bias = layer.bias.array() - learningRate * m_bias_hat.array() / (v_bias_hat.array().sqrt() + epsilon);
+    }
+}
+
+void NeuralNetwork::train(std::vector<Eigen::VectorXd> &trainInputs, std::vector<Eigen::VectorXd> &trainOutputs, std::vector<Eigen::VectorXd> &validInputs, std::vector<Eigen::VectorXd> &validOutputs, double learningRate, int nEpochs, int batchSize, int patience) {
+
+    int t = 0;
+    double bestValidMSE = std::numeric_limits<double>::max();
+    int epochsNoImprove = 0;
+    int totalSteps = (trainInputs.size() + batchSize - 1) / batchSize;  // Total steps in one epoch
+
+    for (int epoch = 0; epoch < nEpochs; epoch++) {
+        for (int i = 0; i < static_cast<int>(trainInputs.size()); i += batchSize) {
+            for (int j = i; j < i + batchSize && j < static_cast<int>(trainInputs.size()); j++) {
+                forwardPropagate(trainInputs[j]);
+                backPropagate(trainOutputs[j]);
             }
+            t += 1;
+            updateWeightsAndBiases(learningRate, t);
+            printProgressBar(t, totalSteps);  // Display progress bar
         }
 
-        for (auto &neuron : layers[l].neurons)
-        {
-            for (int i = 0; i < static_cast<int>(neuron.weights.size()); i++)
-            {
-                // Update biased first moment estimate for weights
-                neuron.m_weights[i] = beta1 * neuron.m_weights[i] + (1 - beta1) * neuron.delta * inputs[i];
-                // Update biased second raw moment estimate for weights
-                neuron.v_weights[i] = beta2 * neuron.v_weights[i] + (1 - beta2) * pow(neuron.delta * inputs[i], 2);
-                // Compute bias-corrected first moment estimate for weights
-                double m_hat_weight = neuron.m_weights[i] / (1 - pow(beta1, t));
-                // Compute bias-corrected second raw moment estimate for weights
-                double v_hat_weight = neuron.v_weights[i] / (1 - pow(beta2, t));
-                // Update weights
-                double weightUpdate = learningRate * m_hat_weight / (sqrt(v_hat_weight) + epsilon);
-                if (std::isnan(weightUpdate))
-                {
-                    std::cout << "NaN detected in weight update. Skipping weight update." << std::endl;
-                }
-                else
-                {
-                    neuron.weights[i] += weightUpdate;
-                }
-            }
-            // Update biased first moment estimate for bias
-            neuron.m_bias = beta1 * neuron.m_bias + (1 - beta1) * neuron.delta;
-            // Update biased second raw moment estimate for bias
-            neuron.v_bias = beta2 * neuron.v_bias + (1 - beta2) * pow(neuron.delta, 2);
-            // Compute bias-corrected first momentestimate for bias
-            double m_hat_bias = neuron.m_bias / (1 - pow(beta1, t));
-            // Compute bias-corrected second raw moment estimate for bias
-            double v_hat_bias = neuron.v_bias / (1 - pow(beta2, t));
-            // Update bias
-            double biasUpdate = learningRate * m_hat_bias / (sqrt(v_hat_bias) + epsilon);
-            if (std::isnan(biasUpdate))
-            {
-                std::cout << "NaN detected in bias update. Skipping bias update." << std::endl;
-            }
-            else
-            {
-                neuron.bias += biasUpdate;
-            }
+        double validMSE = calculateMSE(validInputs, validOutputs);
+        double trainMSE = calculateMSE(trainInputs, trainOutputs);
+        std::cout << "\nEpoch: " << epoch << ", Train MSE: " << trainMSE << ", Valid MSE: " << validMSE << std::endl;
+
+        if (validMSE < bestValidMSE) {
+            bestValidMSE = validMSE;
+            epochsNoImprove = 0;
+        } else {
+            epochsNoImprove += 1;
         }
+
+        if (epochsNoImprove == patience) {
+            std::cout << "Early stopping at epoch: " << epoch << std::endl;
+            break;
+        }
+        t = 0;  // Reset the counter for the next epoch
     }
 }
 
 
-void NeuralNetwork::train(std::vector<std::vector<double>> &trainInputs, std::vector<std::vector<double>> &trainOutputs, std::vector<std::vector<double>> &validInputs, std::vector<std::vector<double>> &validOutputs, double learningRate, int nEpochs, int batchSize, int patience)
-{
-    double bestValidLoss = std::numeric_limits<double>::max();
-    int epochsWithoutImprovement = 0;
-    int t = 1; // Initialize timestep for Adam optimizer
+double NeuralNetwork::calculateMSE(std::vector<Eigen::VectorXd> &inputs, std::vector<Eigen::VectorXd> &targetOutputs) {
 
-    for (int epoch = 0; epoch < nEpochs; epoch++)
-    {
-        unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
-
-        std::shuffle(trainInputs.begin(), trainInputs.end(), std::default_random_engine(seed));
-        std::shuffle(trainOutputs.begin(), trainOutputs.end(), std::default_random_engine(seed));
-
-        for (int i = 0; i < static_cast<int>(trainInputs.size()); i += batchSize)
-        {
-            auto batchEndInputs = std::min(trainInputs.begin() + i + batchSize, trainInputs.end());
-            auto batchEndOutputs = std::min(trainOutputs.begin() + i + batchSize, trainOutputs.end());
-
-            std::vector<std::vector<double>> miniBatchInputs(trainInputs.begin() + i, batchEndInputs);
-            std::vector<std::vector<double>> miniBatchOutputs(trainOutputs.begin() + i, batchEndOutputs);
-
-            for (int j = 0; j < static_cast<int>(miniBatchInputs.size()); j++)
-            {
-                forwardPropagate(miniBatchInputs[j]);
-                backPropagate(miniBatchOutputs[j]);
-                updateWeightsAndBiases(learningRate, t,  0.9, 0.999, 1e-8);; 
-                t++; 
-            }
-        }
-
-        double trainLoss = calculateMSE(trainInputs, trainOutputs);
-        double validLoss = calculateMSE(validInputs, validOutputs);
-
-        if (validLoss < bestValidLoss)
-        {
-            bestValidLoss = validLoss;
-            epochsWithoutImprovement = 0;
-        }
-        else
-        {
-            epochsWithoutImprovement++;
-            if (epochsWithoutImprovement >= patience)
-            {
-                std::cout << "Early stopping..." << std::endl;
-                break;
-            }
-        }
-        printProgressBar(epoch + 1, nEpochs);
-        std::cout << "Epoch " << epoch << " Training MSE: " << trainLoss << ", Validation MSE: " << validLoss << std::endl;
+    double mse = 0.0;
+    for (int i = 0; i < static_cast<int>(inputs.size()); i++) {
+        Eigen::VectorXd output = predict(inputs[i]);
+        mse += (output - targetOutputs[i]).array().square().mean();
     }
-    std::cout << std::endl;
+    return mse / inputs.size();
+}
+
+Eigen::VectorXd NeuralNetwork::predict(const Eigen::VectorXd &input) {
+
+    forwardPropagate(input);
+    return layers.back().output;
 }
 
 
-double NeuralNetwork::calculateMSE(std::vector<std::vector<double>> &inputs, std::vector<std::vector<double>> &targetOutputs)
-{
-    double totalError = 0.0;
-    for (int i = 0; i < static_cast<int>(inputs.size()); i++)
-    {
-        forwardPropagate(inputs[i]);
-        for (int j = 0; j < static_cast<int>(targetOutputs[i].size()); j++)
-        {
-            double error = targetOutputs[i][j] - layers.back().neurons[j].output;
-            totalError += error * error;
-        }
-    }
-    return totalError / static_cast<int>(inputs.size());
-}
+double NeuralNetwork::accuracy(const std::vector<Eigen::VectorXd> &inputs, const std::vector<Eigen::VectorXd> &targetOutputs) {
 
-std::vector<double> NeuralNetwork::predict(const std::vector<double> &inputs)
-{
-    forwardPropagate(inputs);
-    std::vector<double> outputs;
-    for (auto &neuron : layers.back().neurons)
-    {
-        outputs.push_back(neuron.output);
-    }
-    return outputs;
-}
-
-double NeuralNetwork::accuracy(const std::vector<std::vector<double>> &inputs, const std::vector<std::vector<double>> &targetOutputs)
-{
     int correctCount = 0;
-
-    for (size_t i = 0; i < inputs.size(); ++i)
-    {
-        std::vector<double> prediction = predict(inputs[i]);
-        int predictedLabel = std::distance(prediction.begin(), std::max_element(prediction.begin(), prediction.end()));
-        int actualLabel = std::distance(targetOutputs[i].begin(), std::max_element(targetOutputs[i].begin(), targetOutputs[i].end()));
-
-        if (predictedLabel == actualLabel)
-        {
-            ++correctCount;
+    for (int i = 0; i < static_cast<int>(inputs.size()); i++) {
+        Eigen::VectorXd output = predict(inputs[i]);
+        // Assuming the output and target output are one-hot encoded,
+        // the predicted class is the index of the maximum element in the output vector,
+        // and the actual class is the index of the maximum element in the target output vector.
+        int predictedClass = std::distance(output.data(), std::max_element(output.data(), output.data() + output.size()));
+        int actualClass = std::distance(targetOutputs[i].data(), std::max_element(targetOutputs[i].data(), targetOutputs[i].data() + targetOutputs[i].size()));
+        if (predictedClass == actualClass) {
+            correctCount++;
         }
     }
-
     return static_cast<double>(correctCount) / inputs.size();
-}
-
-void NeuralNetwork::save(const std::string &filename)
-{
-    std::ofstream outFile(filename);
-    if (!outFile)
-    {
-        std::cerr << "Error opening output file: " << filename << std::endl;
-        return;
-    }
-
-    for (const auto &layer : layers)
-    {
-        for (const auto &neuron : layer.neurons)
-        {
-            for (const auto &weight : neuron.weights)
-            {
-                outFile << weight << " ";
-            }
-            outFile << neuron.bias << std::endl;
-        }
-        outFile << std::endl;
-    }
-
-    outFile.close();
-}
-
-void NeuralNetwork::load(const std::string &filename)
-{
-    std::ifstream inFile(filename);
-    if (!inFile)
-    {
-        std::cerr << "Error opening input file: " << filename << std::endl;
-        return;
-    }
-
-    for (auto &layer : layers)
-    {
-        for (auto &neuron : layer.neurons)
-        {
-            for (auto &weight : neuron.weights)
-            {
-                if (!(inFile >> weight))
-                {
-                    std::cerr << "Error reading weights from file: " << filename << std::endl;
-                    return;
-                }
-            }
-            if (!(inFile >> neuron.bias))
-            {
-                std::cerr << "Error reading bias from file: " << filename << std::endl;
-                return;
-            }
-        }
-    }
-
-    inFile.close();
 }
