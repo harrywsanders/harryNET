@@ -12,7 +12,7 @@
  * Note: This class does not provide methods for computations on the layer (such as computing outputs of neurons in the layer or updating their weights). These computations are done in the NeuralNetwork class.
  */
 
-#include <Eigen/Dense>
+#include "Eigen/Dense"
 #include <chrono>
 #include <random>
 

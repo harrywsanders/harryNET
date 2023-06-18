@@ -5,6 +5,7 @@ struct Options {
     double learningRate;
     int batchSize;
     int patience;
+    double lambda;
 };
 
 Options parseCommandLineArgs(int argc, char* argv[]) {
@@ -16,6 +17,7 @@ Options parseCommandLineArgs(int argc, char* argv[]) {
     options.learningRate = 0.01;
     options.patience = 10;
     options.batchSize = 32;
+    options.lambda = 0.01;
 
     // Override with command line arguments
     if (argc > 1) options.trainingDataPath = argv[1];
@@ -24,6 +26,7 @@ Options parseCommandLineArgs(int argc, char* argv[]) {
     if (argc > 4) options.learningRate = std::stod(argv[4]);
     if (argc > 5) options.patience = std::stoi(argv[5]);
     if (argc > 6) options.batchSize = std::stoi(argv[6]);
+    if(argc > 7) options.lambda = std::stoi(argv[7]);
 
     return options;
 }

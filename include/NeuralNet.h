@@ -51,9 +51,9 @@ public:
 
     void backPropagate(Eigen::VectorXd &targetOutputs);
 
-    void updateWeightsAndBiases(double learningRate, int t,  double beta1 = 0.9, double beta2 = 0.999, double epsilon = 1e-8);
-
-    void train(std::vector<Eigen::VectorXd> &trainInputs, std::vector<Eigen::VectorXd> &trainOutputs, std::vector<Eigen::VectorXd> &validInputs, std::vector<Eigen::VectorXd> &validOutputs, double learningRate, int nEpochs, int batchSize, int patience);
+    void updateWeightsAndBiases(double learningRate, int t, double lambda, double beta1 = 0.9, double beta2 = 0.999, double epsilon = 1e-8);  
+    
+    void train(std::vector<Eigen::VectorXd> &trainInputs, std::vector<Eigen::VectorXd> &trainOutputs, std::vector<Eigen::VectorXd> &validInputs, std::vector<Eigen::VectorXd> &validOutputs, double learningRate, int nEpochs, int batchSize, int patience, double lambda);
 
     double calculateMSE(std::vector<Eigen::VectorXd> &inputs, std::vector<Eigen::VectorXd> &targetOutputs);
 
@@ -66,7 +66,8 @@ public:
     void load(const std::string &filename);
 };
 
-void NeuralNetwork::forwardPropagate(const Eigen::VectorXd &inputs) {
+void NeuralNetwork::forwardPropagate(const Eigen::VectorXd &inputs)
+{
     layers[0].output = inputs;
     for (size_t i = 1; i < layers.size(); i++)
     {
@@ -92,12 +93,15 @@ void NeuralNetwork::backPropagate(Eigen::VectorXd &targetOutputs)
     }
 }
 
-void NeuralNetwork::updateWeightsAndBiases(double learningRate, int t, double beta1, double beta2, double epsilon)
+void NeuralNetwork::updateWeightsAndBiases(double learningRate, int t, double beta1, double beta2, double epsilon, double lambda)
 {
     for (int i = 1; i < static_cast<int>(layers.size()); ++i)
     {
         Layer &layer = layers[i];
         Eigen::MatrixXd weight_gradients = layer.delta * layers[i - 1].output.transpose(); // Use output from previous layer
+
+        // Add L2 regularization term
+        weight_gradients += lambda * layer.weights;
 
         layer.m_weights = beta1 * layer.m_weights + (1 - beta1) * weight_gradients;
         layer.v_weights = beta2 * layer.v_weights.array() + (1 - beta2) * weight_gradients.array().square();
@@ -122,69 +126,81 @@ void NeuralNetwork::updateWeightsAndBiases(double learningRate, int t, double be
     }
 }
 
-void NeuralNetwork::train(std::vector<Eigen::VectorXd> &trainInputs, std::vector<Eigen::VectorXd> &trainOutputs, std::vector<Eigen::VectorXd> &validInputs, std::vector<Eigen::VectorXd> &validOutputs, double learningRate, int nEpochs, int batchSize, int patience) {
+void NeuralNetwork::train(std::vector<Eigen::VectorXd> &trainInputs, std::vector<Eigen::VectorXd> &trainOutputs, std::vector<Eigen::VectorXd> &validInputs, std::vector<Eigen::VectorXd> &validOutputs, double learningRate, int nEpochs, int batchSize, int patience, double lambda)
+{
 
     int t = 0;
     double bestValidMSE = std::numeric_limits<double>::max();
     int epochsNoImprove = 0;
-    int totalSteps = (trainInputs.size() + batchSize - 1) / batchSize;  // Total steps in one epoch
+    int totalSteps = (trainInputs.size() + batchSize - 1) / batchSize; // Total steps in one epoch
 
-    for (int epoch = 0; epoch < nEpochs; epoch++) {
-        for (int i = 0; i < static_cast<int>(trainInputs.size()); i += batchSize) {
-            for (int j = i; j < i + batchSize && j < static_cast<int>(trainInputs.size()); j++) {
+    for (int epoch = 0; epoch < nEpochs; epoch++)
+    {
+        for (int i = 0; i < static_cast<int>(trainInputs.size()); i += batchSize)
+        {
+            for (int j = i; j < i + batchSize && j < static_cast<int>(trainInputs.size()); j++)
+            {
                 forwardPropagate(trainInputs[j]);
                 backPropagate(trainOutputs[j]);
             }
             t += 1;
-            updateWeightsAndBiases(learningRate, t);
-            printProgressBar(t, totalSteps);  // Display progress bar
+            updateWeightsAndBiases(learningRate, t, lambda);
+            printProgressBar(t, totalSteps);
         }
 
         double validMSE = calculateMSE(validInputs, validOutputs);
         double trainMSE = calculateMSE(trainInputs, trainOutputs);
         std::cout << "\nEpoch: " << epoch << ", Train MSE: " << trainMSE << ", Valid MSE: " << validMSE << std::endl;
 
-        if (validMSE < bestValidMSE) {
+        if (validMSE < bestValidMSE)
+        {
             bestValidMSE = validMSE;
             epochsNoImprove = 0;
-        } else {
+        }
+        else
+        {
             epochsNoImprove += 1;
         }
 
-        if (epochsNoImprove == patience) {
+        if (epochsNoImprove == patience)
+        {
             std::cout << "Early stopping at epoch: " << epoch << std::endl;
             break;
         }
-        t = 0;  // Reset the counter for the next epoch
+        t = 0; // Reset the counter for the next epoch
     }
 }
 
-
-double NeuralNetwork::calculateMSE(std::vector<Eigen::VectorXd> &inputs, std::vector<Eigen::VectorXd> &targetOutputs) {
+double NeuralNetwork::calculateMSE(std::vector<Eigen::VectorXd> &inputs, std::vector<Eigen::VectorXd> &targetOutputs)
+{
 
     double mse = 0.0;
-    for (int i = 0; i < static_cast<int>(inputs.size()); i++) {
+    for (int i = 0; i < static_cast<int>(inputs.size()); i++)
+    {
         Eigen::VectorXd output = predict(inputs[i]);
         mse += (output - targetOutputs[i]).array().square().mean();
     }
     return mse / inputs.size();
 }
 
-Eigen::VectorXd NeuralNetwork::predict(const Eigen::VectorXd &input) {
+Eigen::VectorXd NeuralNetwork::predict(const Eigen::VectorXd &input)
+{
 
     forwardPropagate(input);
     return layers.back().output;
 }
 
-
-double NeuralNetwork::accuracy(const std::vector<Eigen::VectorXd> &inputs, const std::vector<Eigen::VectorXd> &targetOutputs) {
+double NeuralNetwork::accuracy(const std::vector<Eigen::VectorXd> &inputs, const std::vector<Eigen::VectorXd> &targetOutputs)
+{
 
     int correctCount = 0;
-    for (int i = 0; i < static_cast<int>(inputs.size()); i++) {
+    for (int i = 0; i < static_cast<int>(inputs.size()); i++)
+    {
         Eigen::VectorXd output = predict(inputs[i]);
         int predictedClass = std::distance(output.data(), std::max_element(output.data(), output.data() + output.size()));
         int actualClass = std::distance(targetOutputs[i].data(), std::max_element(targetOutputs[i].data(), targetOutputs[i].data() + targetOutputs[i].size()));
-        if (predictedClass == actualClass) {
+        if (predictedClass == actualClass)
+        {
             correctCount++;
         }
     }

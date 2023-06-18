@@ -40,8 +40,8 @@ void loadDataset(const std::string& filename, std::vector<std::vector<double>>& 
 }
 
 int main(int argc, char* argv[]) {
-    if (argc > 7) {
-        std::cout << "Usage: " << argv[0] << " [<training_data>] [<test_data>] [<num_epochs>] [<learning_rate>] [<patience>] [<batch_size>]" << std::endl;
+    if (argc > 8) {
+        std::cout << "Usage: " << argv[0] << " [<training_data>] [<test_data>] [<num_epochs>] [<learning_rate>] [<patience>] [<batch_size>] [<l2 lambda>]" << std::endl;
         return 1;
     }
 
@@ -52,6 +52,8 @@ int main(int argc, char* argv[]) {
 
     loadDataset(options.trainingDataPath, trainInputsRaw, trainOutputsRaw);
     loadDataset(options.testDataPath, testInputsRaw, testOutputsRaw);
+
+    std::cout << "Data has been loaded successfully." << std::endl;
 
     std::vector<Eigen::VectorXd> trainInputs, trainOutputs;
     std::vector<Eigen::VectorXd> testInputs, testOutputs;
@@ -88,9 +90,11 @@ int main(int argc, char* argv[]) {
     nn.layers.push_back(hiddenLayer1);
     nn.layers.push_back(hiddenLayer2);
     nn.layers.push_back(outputLayer);
+    std::cout << "Network initialized. Training beginning." << std::endl;
+
 
     // Train the network
-    nn.train(trainInputs, trainOutputs, testInputs, testOutputs, options.learningRate, options.numEpochs, options.batchSize, options.patience);
+    nn.train(trainInputs, trainOutputs, testInputs, testOutputs, options.learningRate, options.numEpochs, options.batchSize, options.patience,options.lambda);
 
     // Evaluate accuracy on test data
     double accuracy = nn.accuracy(testInputs, testOutputs);
