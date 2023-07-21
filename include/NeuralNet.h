@@ -51,8 +51,8 @@ public:
 
     void backPropagate(Eigen::VectorXd &targetOutputs);
 
-    void updateWeightsAndBiases(double learningRate, int t, double lambda, double beta1 = 0.9, double beta2 = 0.999, double epsilon = 1e-8);  
-    
+    void updateWeightsAndBiases(double learningRate, int t, double lambda, double beta1 = 0.9, double beta2 = 0.999, double epsilon = 1e-8);
+
     void train(std::vector<Eigen::VectorXd> &trainInputs, std::vector<Eigen::VectorXd> &trainOutputs, std::vector<Eigen::VectorXd> &validInputs, std::vector<Eigen::VectorXd> &validOutputs, double learningRate, int nEpochs, int batchSize, int patience, double lambda);
 
     double calculateMSE(std::vector<Eigen::VectorXd> &inputs, std::vector<Eigen::VectorXd> &targetOutputs);
@@ -205,4 +205,87 @@ double NeuralNetwork::accuracy(const std::vector<Eigen::VectorXd> &inputs, const
         }
     }
     return static_cast<double>(correctCount) / inputs.size();
+}
+
+void NeuralNetwork::save(const std::string &filename)
+{
+    std::ofstream outputFile(filename, std::ios::binary);
+
+    if (!outputFile.is_open())
+    {
+        throw std::runtime_error("Unable to open file for writing: " + filename);
+    }
+
+    int numLayers = layers.size();
+    outputFile.write(reinterpret_cast<char *>(&numLayers), sizeof(numLayers));
+
+    for (const auto &layer : layers)
+    {
+        int rows = layer.weights.rows();
+        int cols = layer.weights.cols();
+
+        outputFile.write(reinterpret_cast<char *>(&rows), sizeof(rows));
+        outputFile.write(reinterpret_cast<char *>(&cols), sizeof(cols));
+
+        for (int i = 0; i < rows; ++i)
+        {
+            for (int j = 0; j < cols; ++j)
+            {
+                double weight = layer.weights(i, j);
+                outputFile.write(reinterpret_cast<char *>(&weight), sizeof(weight));
+            }
+        }
+
+        for (int i = 0; i < rows; ++i)
+        {
+            double bias = layer.bias(i);
+            outputFile.write(reinterpret_cast<char *>(&bias), sizeof(bias));
+        }
+    }
+
+    outputFile.close();
+}
+
+void NeuralNetwork::load(const std::string &filename)
+{
+    std::ifstream inputFile(filename, std::ios::binary);
+
+    if (!inputFile.is_open())
+    {
+        throw std::runtime_error("Unable to open file for reading: " + filename);
+    }
+
+    int numLayers;
+    inputFile.read(reinterpret_cast<char *>(&numLayers), sizeof(numLayers));
+
+    layers.resize(numLayers);
+
+    for (auto &layer : layers)
+    {
+        int rows, cols;
+        inputFile.read(reinterpret_cast<char *>(&rows), sizeof(rows));
+        inputFile.read(reinterpret_cast<char *>(&cols), sizeof(cols));
+
+        layer.weights.resize(rows, cols);
+        layer.bias.resize(rows);
+
+        for (int i = 0; i < rows; ++i)
+        {
+            for (int j = 0; j < cols; ++j)
+            {
+                double weight;
+                inputFile.read(reinterpret_cast<char *>(&weight), sizeof(weight));
+                layer.weights(i, j) = weight;
+            }
+        }
+
+        for (int i = 0; i < rows; ++i)
+        {
+            double bias;
+            inputFile.read(reinterpret_cast<char *>(&bias), sizeof(bias));
+            layer.bias(i) = bias;
+        }
+    }
+
+    inputFile.close();
 }
