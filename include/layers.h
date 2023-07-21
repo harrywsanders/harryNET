@@ -15,15 +15,22 @@
 #include "Eigen/Dense"
 #include <chrono>
 #include <random>
+enum class LayerType { Dense, Convolutional };
 
 class Layer {
 public:
     Eigen::MatrixXd weights, m_weights, v_weights;
     Eigen::VectorXd bias, m_bias, v_bias, output, delta;
+    std::vector<Eigen::MatrixXd> filters, m_filters, v_filters;
+    std::vector<double> filterBias, m_filterBias, v_filterBias;
     std::default_random_engine generator;
     std::normal_distribution<double> distribution;
 
-    Layer(size_t nNeurons, size_t nInputsPerNeuron)
+    size_t nFilters, filterSize;
+    size_t stride, padding;
+    LayerType type;
+
+    Layer(size_t nNeurons, size_t nInputsPerNeuron, LayerType type = LayerType::Dense)
         : weights(nNeurons, nInputsPerNeuron),
           m_weights(Eigen::MatrixXd::Zero(nNeurons, nInputsPerNeuron)),
           v_weights(Eigen::MatrixXd::Zero(nNeurons, nInputsPerNeuron)),
@@ -33,13 +40,33 @@ public:
           output(nNeurons),
           delta(nNeurons),
           generator(std::chrono::system_clock::now().time_since_epoch().count()),
-          distribution(0.0, std::sqrt(2.0 / nInputsPerNeuron))
+          distribution(0.0, std::sqrt(2.0 / nInputsPerNeuron)),
+          type(type)
     {
         for (size_t i = 0; i < nNeurons; i++) {
             for (size_t j = 0; j < nInputsPerNeuron; j++) {
                 weights(i, j) = distribution(generator);
             }
             bias[i] = distribution(generator);
+        }
+    }
+
+    Layer(size_t nFilters, size_t filterSize, size_t stride, size_t padding, LayerType type = LayerType::Convolutional)
+        : nFilters(nFilters),
+          filterSize(filterSize),
+          stride(stride),
+          padding(padding),
+          type(type),
+          generator(std::chrono::system_clock::now().time_since_epoch().count()),
+          distribution(0.0, std::sqrt(2.0 / (filterSize * filterSize)))
+    {
+        for (size_t i = 0; i < nFilters; i++) {
+            filters.push_back(Eigen::MatrixXd::Random(filterSize, filterSize));
+            m_filters.push_back(Eigen::MatrixXd::Zero(filterSize, filterSize));
+            v_filters.push_back(Eigen::MatrixXd::Zero(filterSize, filterSize));
+            filterBias.push_back(distribution(generator));
+            m_filterBias.push_back(0.0);
+            v_filterBias.push_back(0.0);
         }
     }
 };
