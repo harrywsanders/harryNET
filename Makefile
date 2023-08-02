@@ -59,3 +59,25 @@ clean:
 	$(RM) -r $(OBJDIR)
 
 .PHONY: all setup clean debug release
+
+# Additional flags for linking with Googletest
+GTEST_FLAGS = -lgtest -lgtest_main -pthread
+
+# Test target executable
+TEST_TARGET = tests
+TEST_TARGET_PATH = $(BINDIR)/$(TEST_TARGET)
+
+# Test source and object files
+TEST_SRC = tests.cpp
+TEST_OBJ = $(OBJDIR)/tests.o
+
+# Test target
+test: setup $(TEST_TARGET_PATH)
+
+# The test binary
+$(TEST_TARGET_PATH): $(TEST_OBJ) $(OBJ)
+	$(CXX) $(CXXFLAGS) $(GTEST_FLAGS) -I$(INCDIR) -o $@ $^
+
+# Compilation of test source file into object file
+$(OBJDIR)/tests.o: $(TEST_SRC) $(INCDIR)/*.h
+	$(CXX) $(CXXFLAGS) -I$(INCDIR) -MMD -c $< -o $@
