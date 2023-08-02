@@ -73,8 +73,10 @@ void NeuralNetwork::forwardPropagate(const Eigen::VectorXd &inputs)
     {
         layers[i].output = layers[i].weights * layers[i - 1].output + layers[i].bias;
 
-        // apply sigmoid activation function
-        layers[i].output = 1.0 / (1.0 + (-layers[i].output).array().exp());
+        
+        // apply ReLU activation function
+        layers[i].output = layers[i].output.array().max(0);
+    
     }
 }
 
@@ -89,7 +91,9 @@ void NeuralNetwork::backPropagate(Eigen::VectorXd &targetOutputs)
     {
         Layer &hiddenLayer = layers[i];
         Layer &nextLayer = layers[i + 1];
-        hiddenLayer.delta = (nextLayer.weights.transpose() * nextLayer.delta).array() * (hiddenLayer.output.array() * (1.0 - hiddenLayer.output.array()));
+        
+        hiddenLayer.delta = (nextLayer.weights.transpose() * nextLayer.delta).array() * (hiddenLayer.output.array() > 0).cast<double>();
+    
     }
 }
 

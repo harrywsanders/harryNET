@@ -32,6 +32,10 @@ debug: setup $(TARGET_PATH)
 release: CXXFLAGS += $(RELEASE_FLAGS)
 release: setup $(TARGET_PATH)
 
+tests: $(OBJDIR)/tests.o
+	$(CXX) $(CXXFLAGS) -o $(BINDIR)/tests $(OBJDIR)/tests.o
+
+
 # The target binary
 $(TARGET_PATH): $(OBJ)
 	$(CXX) $(CXXFLAGS) -o $@ $^
