@@ -15,7 +15,7 @@ TEST(SpeedTest, ParseCommandLineArgs) {
     std::cout << "Time taken to parse command-line arguments: " << duration.count() << " microseconds" << std::endl;
 }
 
-// Additional speed tests can be written for the methods in NeuralNet.h and layers.h
+// Additional speed tests to be written for the methods in NeuralNet.h and layers.h
 
 int main(int argc, char** argv) {
     ::testing::InitGoogleTest(&argc, argv);
