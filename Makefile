@@ -13,15 +13,14 @@ OBJ_DIR = ./obj
 # Binary directory
 BIN_DIR = ./bin
 # Test directory
-TEST_DIR = .
+TEST_DIR = ./src
 
 # Target executable name
-TARGET = $(BIN_DIR)/harryNET
+TARGET = $(BIN_DIR)/neural_net.exe
 
-# Source files
-SOURCES = $(wildcard $(SRC_DIR)/*.cpp)
-# Object files
-OBJECTS = $(SOURCES:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
+# Main source files (excluding tests)
+MAIN_SOURCES = $(wildcard $(SRC_DIR)/main.cpp)
+MAIN_OBJECTS = $(MAIN_SOURCES:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
 
 # Test files
 TEST_SOURCES = $(wildcard $(TEST_DIR)/tests.cpp)
@@ -29,10 +28,13 @@ TEST_OBJECTS = $(TEST_SOURCES:$(TEST_DIR)/%.cpp=$(OBJ_DIR)/%.o)
 TEST_TARGET = $(BIN_DIR)/tests
 
 # Build rules
-all: $(TARGET) run_tests
+all: main tests
 
-$(TARGET): $(OBJECTS)
-	$(CXX) $^ -o $@ $(LIBS)
+main: $(MAIN_OBJECTS)
+	$(CXX) $^ -o $(TARGET) $(LIBS)
+
+run_main: main
+	./$(TARGET) mnist_train.csv mnist_test.csv
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
 	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
@@ -41,7 +43,7 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
 tests: $(TEST_TARGET)
 	./$(TEST_TARGET)   # Command to run the tests automatically after building
 
-$(TEST_TARGET): $(TEST_OBJECTS) $(filter-out $(OBJ_DIR)/main.o, $(OBJECTS))
+$(TEST_TARGET): $(TEST_OBJECTS) $(filter-out $(OBJ_DIR)/main.o, $(MAIN_OBJECTS))
 	$(CXX) $^ -o $@ $(LIBS)
 
 $(OBJ_DIR)/%.o: $(TEST_DIR)/%.cpp
