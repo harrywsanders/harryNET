@@ -26,7 +26,7 @@ Options parseCommandLineArgs(int argc, char* argv[]) {
     if (argc > 4) options.learningRate = std::stod(argv[4]);
     if (argc > 5) options.patience = std::stoi(argv[5]);
     if (argc > 6) options.batchSize = std::stoi(argv[6]);
-    if(argc > 7) options.lambda = std::stoi(argv[7]);
+    if(argc > 7) options.lambda = std::stod(argv[7]);
 
     return options;
 }

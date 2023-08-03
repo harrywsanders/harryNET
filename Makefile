@@ -1,83 +1,52 @@
+# Compiler
 CXX = g++
-CXXFLAGS = -std=c++14 -Wall -Wextra
+# Flags
+CXXFLAGS = -Wall -std=c++14
+# Include directories for header files
+INCLUDES = -I./include
+# Libraries for linking (including Googletest)
+LIBS = -lgtest -lgtest_main -pthread
+# Source files directory
+SRC_DIR = ./src
+# Object files directory
+OBJ_DIR = ./obj
+# Binary directory
+BIN_DIR = ./bin
+# Test directory
+TEST_DIR = .
 
-# Source and object files directory
-SRCDIR = src
-OBJDIR = obj
-BINDIR = bin
-INCDIR = include
+# Target executable name
+TARGET = $(BIN_DIR)/harryNET
 
+# Source files
+SOURCES = $(wildcard $(SRC_DIR)/*.cpp)
+# Object files
+OBJECTS = $(SOURCES:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
 
-# The build target executable
-TARGET = neural_net.exe
-TARGET_PATH = $(BINDIR)/$(TARGET)
+# Test files
+TEST_SOURCES = $(wildcard $(TEST_DIR)/tests.cpp)
+TEST_OBJECTS = $(TEST_SOURCES:$(TEST_DIR)/%.cpp=$(OBJ_DIR)/%.o)
+TEST_TARGET = $(BIN_DIR)/tests
 
-# Source and object files
-SRC = $(wildcard $(SRCDIR)/*.cpp)
-OBJ = $(SRC:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)
-DEP = $(OBJ:.o=.d)
+# Build rules
+all: $(TARGET) run_tests
 
-# Release and Debug build settings
-RELEASE_FLAGS = -O2
-DEBUG_FLAGS = -g -O0 -DDEBUG
+$(TARGET): $(OBJECTS)
+	$(CXX) $^ -o $@ $(LIBS)
 
-# Default build
-all: setup release
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
+	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
 
-# Debug build
-debug: CXXFLAGS += $(DEBUG_FLAGS)
-debug: setup $(TARGET_PATH)
+# Test build rule
+tests: $(TEST_TARGET)
+	./$(TEST_TARGET)   # Command to run the tests automatically after building
 
-# Release build
-release: CXXFLAGS += $(RELEASE_FLAGS)
-release: setup $(TARGET_PATH)
+$(TEST_TARGET): $(TEST_OBJECTS) $(filter-out $(OBJ_DIR)/main.o, $(OBJECTS))
+	$(CXX) $^ -o $@ $(LIBS)
 
-tests: $(OBJDIR)/tests.o
-	$(CXX) $(CXXFLAGS) -o $(BINDIR)/tests $(OBJDIR)/tests.o
+$(OBJ_DIR)/%.o: $(TEST_DIR)/%.cpp
+	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
 
-
-# The target binary
-$(TARGET_PATH): $(OBJ)
-	$(CXX) $(CXXFLAGS) -o $@ $^
-
-# Compilation of source files into object files
-$(OBJDIR)/%.o: $(SRCDIR)/%.cpp $(INCDIR)/*.h
-	$(CXX) $(CXXFLAGS) -I$(INCDIR) -MMD -c $< -o $@
-
-# Include dependencies
--include $(DEP)
-
-# Set up the directories
-setup:
-	mkdir -p $(SRCDIR)
-	mkdir -p $(OBJDIR)
-	mkdir -p $(BINDIR)
-
-# Clean up
+# Clean rule
 clean:
-	$(RM) -r $(BINDIR)
-	$(RM) -r $(OBJDIR)
-
-.PHONY: all setup clean debug release
-
-# Additional flags for linking with Googletest
-GTEST_FLAGS = -lgtest -lgtest_main -pthread
-
-# Test target executable
-TEST_TARGET = tests
-TEST_TARGET_PATH = $(BINDIR)/$(TEST_TARGET)
-
-# Test source and object files
-TEST_SRC = tests.cpp
-TEST_OBJ = $(OBJDIR)/tests.o
-
-# Test target
-test: setup $(TEST_TARGET_PATH)
-
-# The test binary
-$(TEST_TARGET_PATH): $(TEST_OBJ) $(OBJ)
-	$(CXX) $(CXXFLAGS) $(GTEST_FLAGS) -I$(INCDIR) -o $@ $^
-
-# Compilation of test source file into object file
-$(OBJDIR)/tests.o: $(TEST_SRC) $(INCDIR)/*.h
-	$(CXX) $(CXXFLAGS) -I$(INCDIR) -MMD -c $< -o $@
+	rm -f $(OBJ_DIR)/*.o $(BIN_DIR)/*
