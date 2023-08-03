@@ -62,5 +62,80 @@ TEST(NeuralNetworkTest, ForwardPropagation) {
 
 }
 
+TEST(NeuralNetworkTest, BackPropagation) {
+    NeuralNetwork nn;
 
-// Additional tests for other methods like backPropagate, train, predict, etc. can be added here
+    // Create and add layers
+    Layer inputLayer(3, 3, LayerType::Dense);
+    Layer hiddenLayer(4, 3, LayerType::Dense);
+    Layer outputLayer(2, 4, LayerType::Dense);
+
+    // Example weights and biases for hidden layer
+    hiddenLayer.weights << 0.1, 0.2, 0.3,
+                           0.4, 0.5, 0.6,
+                           0.7, 0.8, 0.9,
+                           1.0, 1.1, 1.2;
+    hiddenLayer.bias << 0.5, 0.5, 0.5, 0.5;
+
+    // Example weights and biases for output layer
+    outputLayer.weights << 0.1, 0.2, 0.3, 0.4,
+                           0.5, 0.6, 0.7, 0.8;
+    outputLayer.bias << 0.5, 0.5;
+
+    nn.layers.push_back(inputLayer);
+    nn.layers.push_back(hiddenLayer);
+    nn.layers.push_back(outputLayer);
+
+    Eigen::VectorXd inputs(3);
+    inputs << 1.0, 2.0, 3.0;
+    nn.forwardPropagate(inputs);
+
+    Eigen::VectorXd targetOutputs(2);
+    targetOutputs << 0.5, 0.5;
+    nn.backPropagate(targetOutputs);
+
+    // Calculate expected values manually
+    Eigen::VectorXd expectedHiddenOutput(4);
+    expectedHiddenOutput << std::max(0.5 + 1.4, 0.0), 
+                            std::max(0.5 + 3.2, 0.0), 
+                            std::max(0.5 + 5.0, 0.0), 
+                            std::max(0.5 + 6.8, 0.0);
+
+    // Add more expectations based on the actual values of weights and biases
+    for (int i = 0; i < 4; i++) {
+        EXPECT_NEAR(nn.layers[1].output[i], expectedHiddenOutput[i], 1e-5);
+    }
+}
+
+
+TEST(NeuralNetworkTest, Training) {
+    NeuralNetwork nn;
+    // Create and add layers
+    Layer inputLayer(3, 3, LayerType::Dense);
+    Layer hiddenLayer(4, 3, LayerType::Dense);
+    Layer outputLayer(2, 4, LayerType::Dense);
+    nn.layers.push_back(inputLayer);
+    nn.layers.push_back(hiddenLayer);
+    nn.layers.push_back(outputLayer);
+
+    std::vector<Eigen::VectorXd> trainInputs, trainOutputs, validInputs, validOutputs;
+    // Populate inputs and outputs
+
+    trainInputs.push_back(Eigen::VectorXd(3));
+    trainInputs[0] << 1.0, 2.0, 3.0;
+    trainOutputs.push_back(Eigen::VectorXd(2));
+    trainOutputs[0] << 0.5, 0.5;
+
+    validInputs.push_back(Eigen::VectorXd(3));
+    validInputs[0] << 1.0, 2.0, 3.0;
+    validOutputs.push_back(Eigen::VectorXd(2));
+    validOutputs[0] << 0.5, 0.5;
+
+    double learningRate = 0.01;
+    int nEpochs = 100;
+    int batchSize = 32;
+    int patience = 10;
+    double lambda = 0.01;
+
+    nn.train(trainInputs, trainOutputs, validInputs, validOutputs, learningRate, nEpochs, batchSize, patience, lambda, false);
+}

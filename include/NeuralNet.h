@@ -53,7 +53,7 @@ public:
 
     void updateWeightsAndBiases(double learningRate, int t, double lambda, double beta1 = 0.9, double beta2 = 0.999, double epsilon = 1e-8);
 
-    void train(std::vector<Eigen::VectorXd> &trainInputs, std::vector<Eigen::VectorXd> &trainOutputs, std::vector<Eigen::VectorXd> &validInputs, std::vector<Eigen::VectorXd> &validOutputs, double learningRate, int nEpochs, int batchSize, int patience, double lambda);
+    void train(std::vector<Eigen::VectorXd> &trainInputs, std::vector<Eigen::VectorXd> &trainOutputs, std::vector<Eigen::VectorXd> &validInputs, std::vector<Eigen::VectorXd> &validOutputs, double learningRate, int nEpochs, int batchSize, int patience, double lambda, bool progressBar = true);
 
     double calculateMSE(std::vector<Eigen::VectorXd> &inputs, std::vector<Eigen::VectorXd> &targetOutputs);
 
@@ -130,7 +130,7 @@ void NeuralNetwork::updateWeightsAndBiases(double learningRate, int t, double be
     }
 }
 
-void NeuralNetwork::train(std::vector<Eigen::VectorXd> &trainInputs, std::vector<Eigen::VectorXd> &trainOutputs, std::vector<Eigen::VectorXd> &validInputs, std::vector<Eigen::VectorXd> &validOutputs, double learningRate, int nEpochs, int batchSize, int patience, double lambda)
+void NeuralNetwork::train(std::vector<Eigen::VectorXd> &trainInputs, std::vector<Eigen::VectorXd> &trainOutputs, std::vector<Eigen::VectorXd> &validInputs, std::vector<Eigen::VectorXd> &validOutputs, double learningRate, int nEpochs, int batchSize, int patience, double lambda, bool progressBar)
 {
 
     int t = 0;
@@ -149,12 +149,16 @@ void NeuralNetwork::train(std::vector<Eigen::VectorXd> &trainInputs, std::vector
             }
             t += 1;
             updateWeightsAndBiases(learningRate, t, lambda);
-            printProgressBar(t, totalSteps);
+            if (progressBar){
+                printProgressBar(t, totalSteps);
+            }
         }
 
         double validMSE = calculateMSE(validInputs, validOutputs);
         double trainMSE = calculateMSE(trainInputs, trainOutputs);
+        if(progressBar){
         std::cout << "\nEpoch: " << epoch << ", Train MSE: " << trainMSE << ", Valid MSE: " << validMSE << std::endl;
+        }
 
         if (validMSE < bestValidMSE)
         {
