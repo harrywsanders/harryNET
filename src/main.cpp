@@ -10,26 +10,26 @@
 #include "../include/NeuralNet.h"
 #include "../include/CommandLine.h"
 
-
 void loadDataset(const std::string& filename, std::vector<std::vector<double>>& inputs, std::vector<std::vector<double>>& outputs) {
     std::ifstream file(filename);
     std::string line;
+    double reciprocal_255 = 1 / 255.0;
 
-    std::getline(file, line);
+    std::getline(file, line); 
 
-    while (getline(file, line)) {
+    while (std::getline(file, line)) {
         std::vector<double> input;
         std::vector<double> output(10, 0.0);
 
-        std::istringstream ss(line);
+        std::stringstream ss(line);
         std::string value;
         int index = 0;
-        while (getline(ss, value, ',')) {
+        while (std::getline(ss, value, ',')) {
             double num = std::stod(value);
             if (index == 0) {
                 output[(int)num] = 1.0;
             } else {
-                input.push_back(num / 255.0);
+                input.push_back(num * reciprocal_255);
             }
             index++;
         }
@@ -38,6 +38,7 @@ void loadDataset(const std::string& filename, std::vector<std::vector<double>>& 
         outputs.push_back(output);
     }
 }
+
 
 int main(int argc, char* argv[]) {
     if (argc > 8) {

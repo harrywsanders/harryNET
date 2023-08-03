@@ -25,22 +25,13 @@
 /**
  * Helper function to show training progress bar in the console.
  */
-void printProgressBar(int current, int total)
-{
+void printProgressBar(int current, int total) {
     int percent = (current * 100) / total;
-    std::cout << "\rTraining progress: [";
-
-    int i = 0;
-    for (; i < percent / 2; i++)
-        std::cout << "=";
-
-    for (; i < 50; i++)
-        std::cout << " ";
-
-    std::cout << "] " << percent << "%   ";
-
-    std::cout.flush();
+    int progressBarLength = percent / 2;
+    std::string progressBar = std::string(progressBarLength, '=') + std::string(50 - progressBarLength, ' ');
+    std::cout << "\rTraining progress: [" << progressBar << "] " << percent << "%   " << std::flush;
 }
+
 
 class NeuralNetwork
 {
@@ -95,12 +86,11 @@ void NeuralNetwork::backPropagate(Eigen::VectorXd &targetOutputs)
         hiddenLayer.delta = (nextLayer.weights.transpose() * nextLayer.delta).array() * (hiddenLayer.output.array() > 0).cast<double>();
     
     }
-}
+}void NeuralNetwork::updateWeightsAndBiases(double learningRate, int t, double lambda, double beta1, double beta2, double epsilon) {
+    double beta1_pow_t = std::pow(beta1, t);
+    double beta2_pow_t = std::pow(beta2, t);
 
-void NeuralNetwork::updateWeightsAndBiases(double learningRate, int t, double beta1, double beta2, double epsilon, double lambda)
-{
-    for (int i = 1; i < static_cast<int>(layers.size()); ++i)
-    {
+    for (int i = 1; i < static_cast<int>(layers.size()); ++i) {
         Layer &layer = layers[i];
         Eigen::MatrixXd weight_gradients = layer.delta * layers[i - 1].output.transpose(); // Use output from previous layer
 
@@ -111,8 +101,8 @@ void NeuralNetwork::updateWeightsAndBiases(double learningRate, int t, double be
         layer.v_weights = beta2 * layer.v_weights.array() + (1 - beta2) * weight_gradients.array().square();
 
         // Bias correction for weights
-        Eigen::MatrixXd m_weights_hat = layer.m_weights.array() / (1 - std::pow(beta1, t));
-        Eigen::MatrixXd v_weights_hat = layer.v_weights.array() / (1 - std::pow(beta2, t));
+        Eigen::MatrixXd m_weights_hat = layer.m_weights.array() / (1 - beta1_pow_t);
+        Eigen::MatrixXd v_weights_hat = layer.v_weights.array() / (1 - beta2_pow_t);
 
         // Update weights
         layer.weights = layer.weights.array() - learningRate * m_weights_hat.array() / (v_weights_hat.array().sqrt() + epsilon);
@@ -122,13 +112,14 @@ void NeuralNetwork::updateWeightsAndBiases(double learningRate, int t, double be
         layer.v_bias = beta2 * layer.v_bias.array() + (1 - beta2) * layer.delta.array().square();
 
         // Bias correction for biases
-        Eigen::VectorXd m_bias_hat = layer.m_bias.array() / (1 - std::pow(beta1, t));
-        Eigen::VectorXd v_bias_hat = layer.v_bias.array() / (1 - std::pow(beta2, t));
+        Eigen::VectorXd m_bias_hat = layer.m_bias.array() / (1 - beta1_pow_t);
+        Eigen::VectorXd v_bias_hat = layer.v_bias.array() / (1 - beta2_pow_t);
 
         // Update biases
         layer.bias = layer.bias.array() - learningRate * m_bias_hat.array() / (v_bias_hat.array().sqrt() + epsilon);
     }
 }
+
 
 void NeuralNetwork::train(std::vector<Eigen::VectorXd> &trainInputs, std::vector<Eigen::VectorXd> &trainOutputs, std::vector<Eigen::VectorXd> &validInputs, std::vector<Eigen::VectorXd> &validOutputs, double learningRate, int nEpochs, int batchSize, int patience, double lambda, bool progressBar)
 {
@@ -175,45 +166,35 @@ void NeuralNetwork::train(std::vector<Eigen::VectorXd> &trainInputs, std::vector
             std::cout << "Early stopping at epoch: " << epoch << std::endl;
             break;
         }
-        t = 0; // Reset the counter for the next epoch
+        t = 0; 
     }
 }
-
-double NeuralNetwork::calculateMSE(std::vector<Eigen::VectorXd> &inputs, std::vector<Eigen::VectorXd> &targetOutputs)
-{
-
+double NeuralNetwork::calculateMSE(std::vector<Eigen::VectorXd> &inputs, std::vector<Eigen::VectorXd> &targetOutputs) {
     double mse = 0.0;
-    for (int i = 0; i < static_cast<int>(inputs.size()); i++)
-    {
-        Eigen::VectorXd output = predict(inputs[i]);
+    for (int i = 0; i < static_cast<int>(inputs.size()); i++) {
+        forwardPropagate(inputs[i]); 
+        Eigen::VectorXd output = layers.back().output; 
         mse += (output - targetOutputs[i]).array().square().mean();
     }
     return mse / inputs.size();
 }
 
-Eigen::VectorXd NeuralNetwork::predict(const Eigen::VectorXd &input)
-{
 
-    forwardPropagate(input);
-    return layers.back().output;
-}
 
-double NeuralNetwork::accuracy(const std::vector<Eigen::VectorXd> &inputs, const std::vector<Eigen::VectorXd> &targetOutputs)
-{
-
+double NeuralNetwork::accuracy(const std::vector<Eigen::VectorXd> &inputs, const std::vector<Eigen::VectorXd> &targetOutputs) {
     int correctCount = 0;
-    for (int i = 0; i < static_cast<int>(inputs.size()); i++)
-    {
-        Eigen::VectorXd output = predict(inputs[i]);
-        int predictedClass = std::distance(output.data(), std::max_element(output.data(), output.data() + output.size()));
-        int actualClass = std::distance(targetOutputs[i].data(), std::max_element(targetOutputs[i].data(), targetOutputs[i].data() + targetOutputs[i].size()));
-        if (predictedClass == actualClass)
-        {
+    for (int i = 0; i < static_cast<int>(inputs.size()); i++) {
+        forwardPropagate(inputs[i]); // Directly use forward propagation
+        Eigen::VectorXd output = layers.back().output; // Reuse the output from forward propagation
+        int predictedClass = std::max_element(output.data(), output.data() + output.size()) - output.data();
+        int actualClass = std::max_element(targetOutputs[i].data(), targetOutputs[i].data() + targetOutputs[i].size()) - targetOutputs[i].data();
+        if (predictedClass == actualClass) {
             correctCount++;
         }
     }
     return static_cast<double>(correctCount) / inputs.size();
 }
+
 
 void NeuralNetwork::save(const std::string &filename)
 {

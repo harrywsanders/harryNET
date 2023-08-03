@@ -1,7 +1,7 @@
 # Compiler
 CXX = g++
 # Flags
-CXXFLAGS = -Wall -std=c++14
+CXXFLAGS = -Wall -std=c++14 -g -O3 -Wextra
 # Include directories for header files
 INCLUDES = -I./include
 # Libraries for linking (including Googletest)
