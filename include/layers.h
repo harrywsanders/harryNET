@@ -15,6 +15,7 @@
 #include "Eigen/Dense"
 #include <chrono>
 #include <random>
+#pragma once
 
 enum class LayerType
 {
