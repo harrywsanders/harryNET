@@ -179,6 +179,12 @@ double NeuralNetwork::calculateMSE(std::vector<Eigen::VectorXd> &inputs, std::ve
     return mse / inputs.size();
 }
 
+Eigen::VectorXd NeuralNetwork::predict(const Eigen::VectorXd &inputs)
+{
+    forwardPropagate(inputs);
+    return layers.back().output;
+}
+
 
 
 double NeuralNetwork::accuracy(const std::vector<Eigen::VectorXd> &inputs, const std::vector<Eigen::VectorXd> &targetOutputs) {
