@@ -40,11 +40,13 @@ public:
 
     void forwardPropagate(const Eigen::VectorXd &inputs);
 
-    void backPropagate(Eigen::VectorXd &targetOutputs);
+    void backPropagate(const Eigen::VectorXd &targetOutputs);
 
     void updateWeightsAndBiases(double learningRate, int t, double lambda, double beta1 = 0.9, double beta2 = 0.999, double epsilon = 1e-8);
 
     void train(std::vector<Eigen::VectorXd> &trainInputs, std::vector<Eigen::VectorXd> &trainOutputs, std::vector<Eigen::VectorXd> &validInputs, std::vector<Eigen::VectorXd> &validOutputs, double learningRate, int nEpochs, int batchSize, int patience, double lambda, bool progressBar = true);
+
+    void processBatch(const std::vector<Eigen::VectorXd> &inputs, const std::vector<Eigen::VectorXd> &outputs, int startIndex, int batchSize);
 
     double calculateMSE(std::vector<Eigen::VectorXd> &inputs, std::vector<Eigen::VectorXd> &targetOutputs);
 
@@ -66,7 +68,7 @@ void NeuralNetwork::forwardPropagate(const Eigen::VectorXd &inputs) {
 }
 
 
-void NeuralNetwork::backPropagate(Eigen::VectorXd &targetOutputs) {
+void NeuralNetwork::backPropagate(const Eigen::VectorXd &targetOutputs) {
     Layer &outputLayer = layers.back();
     outputLayer.delta.noalias() = (outputLayer.output - targetOutputs).cwiseProduct(outputLayer.output).cwiseProduct(Eigen::VectorXd::Ones(outputLayer.output.size()) - outputLayer.output);
 
@@ -113,55 +115,52 @@ void NeuralNetwork::updateWeightsAndBiases(double learningRate, int t, double la
     }
 }
 
-
-void NeuralNetwork::train(std::vector<Eigen::VectorXd> &trainInputs, std::vector<Eigen::VectorXd> &trainOutputs, std::vector<Eigen::VectorXd> &validInputs, std::vector<Eigen::VectorXd> &validOutputs, double learningRate, int nEpochs, int batchSize, int patience, double lambda, bool progressBar)
-{
-
+void NeuralNetwork::train(std::vector<Eigen::VectorXd> &trainInputs, std::vector<Eigen::VectorXd> &trainOutputs, std::vector<Eigen::VectorXd> &validInputs, std::vector<Eigen::VectorXd> &validOutputs, double learningRate, int nEpochs, int batchSize, int patience, double lambda, bool progressBar) {
     int t = 0;
     double bestValidMSE = std::numeric_limits<double>::max();
     int epochsNoImprove = 0;
     int totalSteps = (trainInputs.size() + batchSize - 1) / batchSize; // Total steps in one epoch
 
-    for (int epoch = 0; epoch < nEpochs; epoch++)
-    {
-        for (int i = 0; i < static_cast<int>(trainInputs.size()); i += batchSize)
-        {
-            for (int j = i; j < i + batchSize && j < static_cast<int>(trainInputs.size()); j++)
-            {
-                forwardPropagate(trainInputs[j]);
-                backPropagate(trainOutputs[j]);
-            }
-            t += 1;
+    for (int epoch = 0; epoch < nEpochs; ++epoch) {
+        for (int i = 0; i < static_cast<int>(trainInputs.size()); i += batchSize) {
+            processBatch(trainInputs, trainOutputs, i, batchSize);
+            t++;
             updateWeightsAndBiases(learningRate, t, lambda);
-            if (progressBar){
+            if (progressBar) {
                 printProgressBar(t, totalSteps);
             }
         }
 
         double validMSE = calculateMSE(validInputs, validOutputs);
         double trainMSE = calculateMSE(trainInputs, trainOutputs);
-        if(progressBar){
-        std::cout << "\nEpoch: " << epoch << ", Train MSE: " << trainMSE << ", Valid MSE: " << validMSE << std::endl;
+        if (progressBar) {
+            std::cout << "\nEpoch: " << epoch << ", Train MSE: " << trainMSE << ", Valid MSE: " << validMSE << std::endl;
         }
 
-        if (validMSE < bestValidMSE)
-        {
+        if (validMSE < bestValidMSE) {
             bestValidMSE = validMSE;
             epochsNoImprove = 0;
-        }
-        else
-        {
-            epochsNoImprove += 1;
+        } else {
+            epochsNoImprove++;
         }
 
-        if (epochsNoImprove == patience)
-        {
+        if (epochsNoImprove >= patience) {
             std::cout << "Early stopping at epoch: " << epoch << std::endl;
             break;
         }
-        t = 0; 
+        t = 0;
     }
 }
+
+void NeuralNetwork::processBatch(const std::vector<Eigen::VectorXd> &inputs, const std::vector<Eigen::VectorXd> &outputs, int startIndex, int batchSize) {
+    int endIndex = std::min(startIndex + batchSize, static_cast<int>(inputs.size()));
+    for (int j = startIndex; j < endIndex; ++j) {
+        forwardPropagate(inputs[j]);
+        backPropagate(outputs[j]);
+    }
+}
+
+
 double NeuralNetwork::calculateMSE(std::vector<Eigen::VectorXd> &inputs, std::vector<Eigen::VectorXd> &targetOutputs) {
     if (inputs.empty()) return std::numeric_limits<double>::quiet_NaN();
     double mse = 0.0;
