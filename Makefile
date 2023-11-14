@@ -3,9 +3,9 @@ CXX = g++
 # Flags
 CXXFLAGS = -Wall -std=c++14 -g -O3 -Wextra
 # Include directories for header files
-INCLUDES = -I./include
+INCLUDES = -I./include -I/users/harrysanders/googletest/googletest/include
 # Libraries for linking (including Googletest)
-LIBS = -lgtest -lgtest_main -pthread
+LIBS = -L/users/harrysanders/googletest/build/lib -lgtest -lgtest_main -pthread
 # Source files directory
 SRC_DIR = ./src
 # Object files directory

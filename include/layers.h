@@ -11,10 +11,10 @@
  *
  * Note: This class does not provide methods for computations on the layer (such as computing outputs of neurons in the layer or updating their weights). These computations are done in the NeuralNetwork class.
  */
-
 #include "Eigen/Dense"
 #include <chrono>
 #include <random>
+#include <stdexcept>
 #pragma once
 
 enum class LayerType
@@ -35,46 +35,69 @@ public:
     std::normal_distribution<double> distribution;
     LayerType type;
 
-    Layer() {}
+    Layer() : type(LayerType::Dense) {}
 
-    Layer(size_t nNeurons, size_t nInputsPerNeuron, LayerType type = LayerType::Dense)
-        : weights(nNeurons, nInputsPerNeuron),
-          m_weights(Eigen::MatrixXd::Zero(nNeurons, nInputsPerNeuron)),
-          v_weights(Eigen::MatrixXd::Zero(nNeurons, nInputsPerNeuron)),
-          bias(nNeurons),
-          m_bias(Eigen::VectorXd::Zero(nNeurons)),
-          v_bias(Eigen::VectorXd::Zero(nNeurons)),
-          output(nNeurons),
-          delta(nNeurons),
-          generator(std::chrono::system_clock::now().time_since_epoch().count()),
-          distribution(0.0, std::sqrt(2.0 / nInputsPerNeuron)),
-          type(type)
+    Layer(size_t nNeurons, size_t nInputsPerNeuron, LayerType layerType = LayerType::Dense)
+        : type(layerType)
     {
-        for (size_t i = 0; i < nNeurons; i++)
-        {
-            for (size_t j = 0; j < nInputsPerNeuron; j++)
-            {
+        if (nNeurons == 0 || nInputsPerNeuron == 0) {
+            throw std::invalid_argument("Number of neurons and inputs per neuron must be greater than 0.");
+        }
+
+        if (layerType == LayerType::Dense) {
+            initializeDenseLayer(nNeurons, nInputsPerNeuron);
+        } else {
+            throw std::invalid_argument("Unsupported layer type for this constructor.");
+        }
+    }
+
+    Layer(size_t nFilters, size_t fSize, size_t s, size_t p, LayerType layerType = LayerType::Convolutional)
+        : nFilters(nFilters), filterSize(fSize), stride(s), padding(p), type(layerType)
+    {
+        if (nFilters == 0 || filterSize == 0) {
+            throw std::invalid_argument("Number of filters and filter size must be greater than 0.");
+        }
+
+        if (layerType == LayerType::Convolutional) {
+            initializeConvolutionalLayer();
+        } else {
+            throw std::invalid_argument("Unsupported layer type for this constructor.");
+        }
+    }
+
+private:
+    void initializeDenseLayer(size_t nNeurons, size_t nInputsPerNeuron) {
+        weights.resize(nNeurons, nInputsPerNeuron);
+        m_weights = Eigen::MatrixXd::Zero(nNeurons, nInputsPerNeuron);
+        v_weights = Eigen::MatrixXd::Zero(nNeurons, nInputsPerNeuron);
+        bias.resize(nNeurons);
+        m_bias = Eigen::VectorXd::Zero(nNeurons);
+        v_bias = Eigen::VectorXd::Zero(nNeurons);
+        output.resize(nNeurons);
+        delta.resize(nNeurons);
+
+        generator.seed(std::chrono::system_clock::now().time_since_epoch().count());
+        distribution = std::normal_distribution<double>(0.0, std::sqrt(2.0 / nInputsPerNeuron));
+
+        for (size_t i = 0; i < nNeurons; i++) {
+            for (size_t j = 0; j < nInputsPerNeuron; j++) {
                 weights(i, j) = distribution(generator);
             }
             bias[i] = distribution(generator);
         }
     }
-Layer(size_t nFilters, size_t filterSize, size_t stride, size_t padding, LayerType type = LayerType::Convolutional)
-    : nFilters(nFilters),
-      filterSize(filterSize),
-      stride(stride),
-      padding(padding),
-      generator(std::chrono::system_clock::now().time_since_epoch().count()),
-      distribution(0.0, std::sqrt(2.0 / (filterSize * filterSize))),
-      type(type)
-{
-    for (size_t i = 0; i < nFilters; i++) {
-        filters.push_back(Eigen::MatrixXd::Random(filterSize, filterSize));
-        m_filters.push_back(Eigen::MatrixXd::Zero(filterSize, filterSize));
-        v_filters.push_back(Eigen::MatrixXd::Zero(filterSize, filterSize));
-        filterBias.push_back(distribution(generator));
-        m_filterBias.push_back(0.0);
-        v_filterBias.push_back(0.0);
+
+    void initializeConvolutionalLayer() {
+        generator.seed(std::chrono::system_clock::now().time_since_epoch().count());
+        distribution = std::normal_distribution<double>(0.0, std::sqrt(2.0 / (filterSize * filterSize)));
+
+        for (size_t i = 0; i < nFilters; i++) {
+            filters.push_back(Eigen::MatrixXd::Random(filterSize, filterSize));
+            m_filters.push_back(Eigen::MatrixXd::Zero(filterSize, filterSize));
+            v_filters.push_back(Eigen::MatrixXd::Zero(filterSize, filterSize));
+            filterBias.push_back(distribution(generator));
+            m_filterBias.push_back(0.0);
+            v_filterBias.push_back(0.0);
+        }
     }
-}
 };

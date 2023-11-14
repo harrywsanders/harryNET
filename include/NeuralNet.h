@@ -57,52 +57,45 @@ public:
     void load(const std::string &filename);
 };
 
-void NeuralNetwork::forwardPropagate(const Eigen::VectorXd &inputs)
-{
+void NeuralNetwork::forwardPropagate(const Eigen::VectorXd &inputs) {
     layers[0].output = inputs;
-    for (size_t i = 1; i < layers.size(); i++)
-    {
-        layers[i].output = layers[i].weights * layers[i - 1].output + layers[i].bias;
-
-        
-        // apply ReLU activation function
-        layers[i].output = layers[i].output.array().max(0);
-    
+    for (size_t i = 1; i < layers.size(); i++) {
+        layers[i].output.noalias() = layers[i].weights * layers[i - 1].output + layers[i].bias;
+        layers[i].output = layers[i].output.unaryExpr([](double x) { return 1.0 / (1.0 + std::exp(-x)); });
     }
 }
 
-void NeuralNetwork::backPropagate(Eigen::VectorXd &targetOutputs)
-{
-    // calculate delta for output layer
 
+void NeuralNetwork::backPropagate(Eigen::VectorXd &targetOutputs) {
     Layer &outputLayer = layers.back();
-    outputLayer.delta = outputLayer.output.array() - targetOutputs.array();
-    // calculate delta for hidden layers
-    for (int i = layers.size() - 2; i >= 0; i--)
-    {
+    outputLayer.delta.noalias() = (outputLayer.output - targetOutputs).cwiseProduct(outputLayer.output).cwiseProduct(Eigen::VectorXd::Ones(outputLayer.output.size()) - outputLayer.output);
+
+    for (int i = layers.size() - 2; i >= 0; i--) {
         Layer &hiddenLayer = layers[i];
         Layer &nextLayer = layers[i + 1];
-        
-        hiddenLayer.delta = (nextLayer.weights.transpose() * nextLayer.delta).array() * (hiddenLayer.output.array() > 0).cast<double>();
-    
+        hiddenLayer.delta.noalias() = nextLayer.weights.transpose() * nextLayer.delta;
+        hiddenLayer.delta = hiddenLayer.delta.cwiseProduct(hiddenLayer.output).cwiseProduct(Eigen::VectorXd::Ones(hiddenLayer.output.size()) - hiddenLayer.output);
     }
-}void NeuralNetwork::updateWeightsAndBiases(double learningRate, int t, double lambda, double beta1, double beta2, double epsilon) {
+}
+
+void NeuralNetwork::updateWeightsAndBiases(double learningRate, int t, double lambda, double beta1, double beta2, double epsilon) {
     double beta1_pow_t = std::pow(beta1, t);
     double beta2_pow_t = std::pow(beta2, t);
 
     for (int i = 1; i < static_cast<int>(layers.size()); ++i) {
         Layer &layer = layers[i];
-        Eigen::MatrixXd weight_gradients = layer.delta * layers[i - 1].output.transpose(); // Use output from previous layer
+        Eigen::MatrixXd weight_gradients = layer.delta * layers[i - 1].output.transpose();
 
         // Add L2 regularization term
-        weight_gradients += lambda * layer.weights;
+        weight_gradients.noalias() += lambda * layer.weights;
 
         layer.m_weights = beta1 * layer.m_weights + (1 - beta1) * weight_gradients;
         layer.v_weights = beta2 * layer.v_weights.array() + (1 - beta2) * weight_gradients.array().square();
 
         // Bias correction for weights
-        Eigen::MatrixXd m_weights_hat = layer.m_weights.array() / (1 - beta1_pow_t);
-        Eigen::MatrixXd v_weights_hat = layer.v_weights.array() / (1 - beta2_pow_t);
+        Eigen::MatrixXd m_weights_hat = layer.m_weights.array() / (1 - std::pow(beta1, t));
+        Eigen::MatrixXd v_weights_hat = layer.v_weights.array() / (1 - std::pow(beta2, t));
+
 
         // Update weights
         layer.weights = layer.weights.array() - learningRate * m_weights_hat.array() / (v_weights_hat.array().sqrt() + epsilon);
@@ -170,6 +163,7 @@ void NeuralNetwork::train(std::vector<Eigen::VectorXd> &trainInputs, std::vector
     }
 }
 double NeuralNetwork::calculateMSE(std::vector<Eigen::VectorXd> &inputs, std::vector<Eigen::VectorXd> &targetOutputs) {
+    if (inputs.empty()) return std::numeric_limits<double>::quiet_NaN();
     double mse = 0.0;
     for (int i = 0; i < static_cast<int>(inputs.size()); i++) {
         forwardPropagate(inputs[i]); 
