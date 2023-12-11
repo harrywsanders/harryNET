@@ -13,7 +13,7 @@ Options parseCommandLineArgs(int argc, char* argv[]) {
     Options options;
     options.trainingDataPath = "train.csv";
     options.testDataPath = "test.csv";
-    options.numEpochs = 100;
+    options.numEpochs = 10;
     options.learningRate = 0.01;
     options.patience = 10;
     options.batchSize = 32;

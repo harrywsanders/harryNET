@@ -1,11 +1,12 @@
 # Compiler
 CXX = g++
 # Flags
-CXXFLAGS = -Wall -std=c++14 -g -O3 -Wextra
+CXXFLAGS = -Wall -std=c++14 -g -O1 -Wextra
+CXXFLAGS_PROF = -Wall -std=c++14 -g -O1 -Wextra
 # Include directories for header files
-INCLUDES = -I./include -I/users/harrysanders/googletest/googletest/include
-# Libraries for linking (including Googletest)
-LIBS = -L/users/harrysanders/googletest/build/lib -lgtest -lgtest_main -pthread
+INCLUDES = -I./include -I/users/harrysanders/googletest/googletest/include -I/opt/homebrew/opt/libomp/include
+# Libraries for linking 
+LIBS = -L/users/harrysanders/googletest/build/lib -L/opt/homebrew/opt/gperftools/lib -L/opt/homebrew/opt/libomp/lib -lgtest -lgtest_main -pthread -lprofiler
 # Source files directory
 SRC_DIR = ./src
 # Object files directory
@@ -29,6 +30,9 @@ TEST_TARGET = $(BIN_DIR)/tests
 
 # Build rules
 all: main tests
+
+profiling: CXXFLAGS = $(CXXFLAGS_PROF)
+profiling: clean main
 
 main: $(MAIN_OBJECTS)
 	$(CXX) $^ -o $(TARGET) $(LIBS)

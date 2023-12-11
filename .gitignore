@@ -4,3 +4,4 @@
 .vscode/
 *.DS_Store
 .Eigen/
+src/profiling_output.prof
