@@ -21,6 +21,9 @@
 #include <fstream>
 #include <iostream>
 #include "layers.h"
+#include "activations.h"
+
+using namespace ActivationFunctions;
 
 /**
  * Helper function to show training progress bar in the console.
@@ -63,10 +66,16 @@ void NeuralNetwork::forwardPropagate(const Eigen::VectorXd &inputs) {
     layers[0].output = inputs;
     for (size_t i = 1; i < layers.size(); i++) {
         layers[i].output.noalias() = layers[i].weights * layers[i - 1].output + layers[i].bias;
-        layers[i].output = layers[i].output.unaryExpr([](double x) { return 1.0 / (1.0 + std::exp(-x)); });
+
+        if (layers[i].activationFunction == ActivationFunctionType::Sigmoid) {
+            layers[i].output = layers[i].output.unaryExpr(&sigmoid);
+        } else if (layers[i].activationFunction == ActivationFunctionType::ReLU) {
+            layers[i].output = layers[i].output.unaryExpr(&relu);
+        } else if (layers[i].activationFunction == ActivationFunctionType::Softmax) {
+            layers[i].output = layers[i].output.unaryExpr(&softmax);
+        }
     }
 }
-
 
 void NeuralNetwork::backPropagate(const Eigen::VectorXd &targetOutputs) {
     Layer &outputLayer = layers.back();

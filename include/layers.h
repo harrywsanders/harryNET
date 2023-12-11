@@ -15,6 +15,7 @@
 #include <chrono>
 #include <random>
 #include <stdexcept>
+#include "activations.h"
 #pragma once
 
 enum class LayerType
@@ -22,6 +23,8 @@ enum class LayerType
     Dense,
     Convolutional
 };
+
+
 
 class Layer {
 public:
@@ -34,11 +37,12 @@ public:
     std::default_random_engine generator;
     std::normal_distribution<double> distribution;
     LayerType type;
+    ActivationFunctionType activationFunction;
 
     Layer() : type(LayerType::Dense) {}
 
-    Layer(size_t nNeurons, size_t nInputsPerNeuron, LayerType layerType = LayerType::Dense)
-        : type(layerType)
+    Layer(size_t nNeurons, size_t nInputsPerNeuron, LayerType layerType = LayerType::Dense, ActivationFunctionType actFunction = ActivationFunctionType::Sigmoid)
+    : type(layerType), activationFunction(actFunction) 
     {
         if (nNeurons == 0 || nInputsPerNeuron == 0) {
             throw std::invalid_argument("Number of neurons and inputs per neuron must be greater than 0.");
@@ -51,8 +55,8 @@ public:
         }
     }
 
-    Layer(size_t nFilters, size_t fSize, size_t s, size_t p, LayerType layerType = LayerType::Convolutional)
-        : nFilters(nFilters), filterSize(fSize), stride(s), padding(p), type(layerType)
+    Layer(size_t nFilters, size_t fSize, size_t s, size_t p, LayerType layerType = LayerType::Convolutional, ActivationFunctionType actFunction = ActivationFunctionType::Sigmoid)
+        : nFilters(nFilters), filterSize(fSize), stride(s), padding(p), type(layerType), activationFunction(actFunction)
     {
         if (nFilters == 0 || filterSize == 0) {
             throw std::invalid_argument("Number of filters and filter size must be greater than 0.");
