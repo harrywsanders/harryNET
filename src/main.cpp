@@ -12,32 +12,50 @@
 
 void loadDataset(const std::string& filename, std::vector<std::vector<double>>& inputs, std::vector<std::vector<double>>& outputs) {
     std::ifstream file(filename);
+    if (!file) {
+        // Handle error or throw an exception
+        std::cout << "Error opening file: " << filename << std::endl;
+        return;
+    }
+
+    // Estimate dataset size
+    unsigned int numLines = std::count(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>(), '\n');
+    file.clear();
+    file.seekg(0, std::ios::beg); 
+
     std::string line;
-    double reciprocal_255 = 1 / 255.0;
+    std::getline(file, line);
+    unsigned int numColumns = std::count(line.begin(), line.end(), ',') + 1;
 
-    std::getline(file, line); 
+    // Reserve capacity for inputs and outputs
+    inputs.reserve(numLines);
+    outputs.reserve(numLines);
 
+    double reciprocal_255 = 1.0 / 255.0;
+    std::string value;
+    double num;
     while (std::getline(file, line)) {
         std::vector<double> input;
-        std::vector<double> output(10, 0.0);
+        input.reserve(numColumns - 1); 
+        std::vector<double> output(10, 0.0); 
 
         std::stringstream ss(line);
-        std::string value;
         int index = 0;
         while (std::getline(ss, value, ',')) {
-            double num = std::stod(value);
+            num = std::stod(value);
             if (index == 0) {
-                output[(int)num] = 1.0;
+                output[static_cast<int>(num)] = 1.0;
             } else {
                 input.push_back(num * reciprocal_255);
             }
             index++;
         }
 
-        inputs.push_back(input);
-        outputs.push_back(output);
+        inputs.push_back(std::move(input)); 
+        outputs.push_back(std::move(output));
     }
 }
+
 
 
 int main(int argc, char* argv[]) {
