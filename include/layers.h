@@ -145,7 +145,8 @@ public:
         }
     }
     Layer(size_t nNeurons, size_t nInputsPerNeuron, LayerType layerType, std::unique_ptr<ActivationFunction> actFunction)
-        : type(layerType), activationFunction(actFunction ? std::move(actFunction) : std::make_unique<ReLU>())
+        : type(layerType), activationFunction(actFunction == nullptr ? std::unique_ptr<ActivationFunction>(std::make_unique<ReLU>()) : std::unique_ptr<ActivationFunction>(std::move(actFunction)))
+
     {
         if (nNeurons == 0 || nInputsPerNeuron == 0)
         {
@@ -163,7 +164,7 @@ public:
     }
 
     Layer(size_t nFilters, size_t fSize, size_t s, size_t p, LayerType layerType, std::unique_ptr<ActivationFunction> actFunction = nullptr)
-        : nFilters(nFilters), filterSize(fSize), stride(s), padding(p), type(layerType), activationFunction(actFunction ? std::move(actFunction) : std::make_unique<ReLU>())
+        : nFilters(nFilters), filterSize(fSize), stride(s), padding(p), type(layerType), activationFunction(actFunction ? std::unique_ptr<ActivationFunction>(std::move(actFunction)) : std::unique_ptr<ActivationFunction>(std::make_unique<ReLU>()))
     {
         if (nFilters == 0 || filterSize == 0)
         {

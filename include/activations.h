@@ -13,6 +13,7 @@ public:
     virtual Eigen::VectorXd eigenDerivative(const Eigen::VectorXd& x, int index) const = 0;
     virtual ~ActivationFunction() = default;
     virtual ActivationFunction* clone() const = 0;
+
     virtual bool operator==(const ActivationFunction& other) const {
         return getName() == other.getName();
     }
@@ -20,10 +21,10 @@ public:
         return !(*this == other);
     }
     //overload the = operator
-    ActivationFunction& operator=(const ActivationFunction& other) {
+    ActivationFunction& operator=(const ActivationFunction&) {
         return *this;
     }
-    
+
 };
 
 
@@ -49,7 +50,7 @@ public:
     }
 
     Eigen::VectorXd eigenDerivative(const Eigen::VectorXd& x, int index) const override {
-    index++;
+    (void)index;
     return x.unaryExpr([](double v) { return ReLU().derivative(v); });
     }
 };
@@ -79,7 +80,7 @@ public:
 
     Eigen::VectorXd eigenDerivative(const Eigen::VectorXd& x, int index) const override {
         std::cout << "WARNING: You Probably don't mean to do this." << std::endl;
-        index++;
+        (void)index;
         return x.unaryExpr([](double v) {
             double sigmoid_x = 1.0 / (1.0 + std::exp(-v));
             return sigmoid_x * (1.0 - sigmoid_x);
@@ -111,7 +112,7 @@ public:
 
     Eigen::VectorXd eigenDerivative(const Eigen::VectorXd& x, int index) const override {
         std::cout << "WARNING: You Probably don't mean to do this." << std::endl;
-        index++;
+        (void)index;
         return x.unaryExpr([](double v) { return 1.0 - std::pow(std::tanh(v), 2); });
     }
 
