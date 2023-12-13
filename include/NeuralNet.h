@@ -21,6 +21,7 @@
 #include <fstream>
 #include <iostream>
 #include "layers.h"
+#include <iostream>
 
 /**
  * Helper function to show training progress bar in the console.
@@ -63,7 +64,8 @@ void NeuralNetwork::forwardPropagate(const Eigen::VectorXd &inputs) {
     layers[0].output = inputs;
     for (size_t i = 1; i < layers.size(); i++) {
         layers[i].output.noalias() = layers[i].weights * layers[i - 1].output + layers[i].bias;
-        layers[i].output = layers[i].output.unaryExpr([](double x) { return 1.0 / (1.0 + std::exp(-x)); });
+        layers[i].output = layers[i].output.cwiseMax(0);
+        std::cout << layers[i].activation >> std::endl;
     }
 }
 
@@ -94,24 +96,19 @@ void NeuralNetwork::updateWeightsAndBiases(double learningRate, int t, double la
         layer.m_weights = beta1 * layer.m_weights + (1 - beta1) * weight_gradients;
         layer.v_weights = beta2 * layer.v_weights.array() + (1 - beta2) * weight_gradients.array().square();
 
-        // Bias correction for weights
-        Eigen::MatrixXd m_weights_hat = layer.m_weights.array() / (1 - std::pow(beta1, t));
-        Eigen::MatrixXd v_weights_hat = layer.v_weights.array() / (1 - std::pow(beta2, t));
-
-
         // Update weights
-        layer.weights = layer.weights.array() - learningRate * m_weights_hat.array() / (v_weights_hat.array().sqrt() + epsilon);
+        Eigen::MatrixXd m_weights_hat = layer.m_weights.array() / (1 - beta1_pow_t);
+        Eigen::MatrixXd v_weights_hat = layer.v_weights.array() / (1 - beta2_pow_t);
+        layer.weights.array() -= learningRate * m_weights_hat.array() / (v_weights_hat.array().sqrt() + epsilon);
 
         // Calculate the first and second moment for biases
         layer.m_bias = beta1 * layer.m_bias.array() + (1 - beta1) * layer.delta.array();
         layer.v_bias = beta2 * layer.v_bias.array() + (1 - beta2) * layer.delta.array().square();
 
-        // Bias correction for biases
+        // Update biases
         Eigen::VectorXd m_bias_hat = layer.m_bias.array() / (1 - beta1_pow_t);
         Eigen::VectorXd v_bias_hat = layer.v_bias.array() / (1 - beta2_pow_t);
-
-        // Update biases
-        layer.bias = layer.bias.array() - learningRate * m_bias_hat.array() / (v_bias_hat.array().sqrt() + epsilon);
+        layer.bias.array() -= learningRate * m_bias_hat.array() / (v_bias_hat.array().sqrt() + epsilon);
     }
 }
 
