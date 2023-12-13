@@ -68,7 +68,6 @@ void NeuralNetwork::forwardPropagate(const Eigen::VectorXd &inputs) {
     }
 }
 
-
 void NeuralNetwork::backPropagate(const Eigen::VectorXd &targetOutputs) {
     Layer &outputLayer = layers.back();
     outputLayer.delta.noalias() = (outputLayer.output - targetOutputs).cwiseProduct(outputLayer.output).cwiseProduct(Eigen::VectorXd::Ones(outputLayer.output.size()) - outputLayer.output);

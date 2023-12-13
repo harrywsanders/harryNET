@@ -16,6 +16,7 @@
 #include <random>
 #include <stdexcept>
 #include "activations.h"
+#include "activations.h"
 #pragma once
 
 enum class LayerType
@@ -23,6 +24,8 @@ enum class LayerType
     Dense,
     Convolutional
 };
+
+
 
 class Layer
 {
