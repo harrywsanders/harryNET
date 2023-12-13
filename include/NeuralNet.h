@@ -64,8 +64,7 @@ void NeuralNetwork::forwardPropagate(const Eigen::VectorXd &inputs) {
     layers[0].output = inputs;
     for (size_t i = 1; i < layers.size(); i++) {
         layers[i].output.noalias() = layers[i].weights * layers[i - 1].output + layers[i].bias;
-        layers[i].output = layers[i].output.cwiseMax(0);
-        std::cout << layers[i].activation >> std::endl;
+        layers[i].output = layers[i].activationFunction->eigenCompute(layers[i].output);
     }
 }
 
