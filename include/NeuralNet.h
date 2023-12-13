@@ -45,7 +45,7 @@ public:
 
     void updateWeightsAndBiases(double learningRate, int t, double lambda, double beta1 = 0.9, double beta2 = 0.999, double epsilon = 1e-8);
 
-    void train(std::vector<Eigen::VectorXd> &trainInputs, std::vector<Eigen::VectorXd> &trainOutputs, std::vector<Eigen::VectorXd> &validInputs, std::vector<Eigen::VectorXd> &validOutputs, double learningRate, int nEpochs, int batchSize, int patience, double lambda, bool progressBar = true);
+    void train(std::vector<Eigen::VectorXd> &trainInputs, std::vector<Eigen::VectorXd> &trainOutputs, std::vector<Eigen::VectorXd> &validInputs, std::vector<Eigen::VectorXd> &validOutputs, double learningRate, int nEpochs, int batchSize, int patience, double lambda, bool progressBar = true, bool verbose = true);
 
     void processBatch(const std::vector<Eigen::VectorXd> &inputs, const std::vector<Eigen::VectorXd> &outputs, int startIndex, int batchSize);
 
@@ -110,7 +110,7 @@ void NeuralNetwork::updateWeightsAndBiases(double learningRate, int t, double la
     }
 }
 
-void NeuralNetwork::train(std::vector<Eigen::VectorXd> &trainInputs, std::vector<Eigen::VectorXd> &trainOutputs, std::vector<Eigen::VectorXd> &validInputs, std::vector<Eigen::VectorXd> &validOutputs, double learningRate, int nEpochs, int batchSize, int patience, double lambda, bool progressBar) {
+void NeuralNetwork::train(std::vector<Eigen::VectorXd> &trainInputs, std::vector<Eigen::VectorXd> &trainOutputs, std::vector<Eigen::VectorXd> &validInputs, std::vector<Eigen::VectorXd> &validOutputs, double learningRate, int nEpochs, int batchSize, int patience, double lambda, bool progressBar, bool verbose) {
     int t = 0;
     double bestValidMSE = std::numeric_limits<double>::max();
     int epochsNoImprove = 0;
@@ -140,7 +140,8 @@ void NeuralNetwork::train(std::vector<Eigen::VectorXd> &trainInputs, std::vector
         }
 
         if (epochsNoImprove >= patience) {
-            std::cout << "Early stopping at epoch: " << epoch << std::endl;
+            if (verbose){
+            std::cout << "Early stopping at epoch: " << epoch << std::endl; }
             break;
         }
         t = 0;
