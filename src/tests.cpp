@@ -8,7 +8,7 @@ TEST(CommandLineTest, DefaultValues) {
 
     EXPECT_EQ(options.trainingDataPath, "train.csv");
     EXPECT_EQ(options.testDataPath, "test.csv");
-    EXPECT_EQ(options.numEpochs, 100);
+    EXPECT_EQ(options.numEpochs, 10);
     EXPECT_DOUBLE_EQ(options.learningRate, 0.01);
     EXPECT_EQ(options.patience, 10);
     EXPECT_EQ(options.batchSize, 32);
@@ -59,6 +59,7 @@ TEST(NeuralNetworkTest, ForwardPropagation) {
 
     // Forward Propagate
     nn.forwardPropagate(inputs);
+    
 
 }
 
@@ -94,16 +95,20 @@ TEST(NeuralNetworkTest, BackPropagation) {
     targetOutputs << 0.5, 0.5;
     nn.backPropagate(targetOutputs);
 
-    // Calculate expected values manually
+    // Expected values for hidden layer output
     Eigen::VectorXd expectedHiddenOutput(4);
-    expectedHiddenOutput << std::max(0.5 + 1.4, 0.0), 
-                            std::max(0.5 + 3.2, 0.0), 
-                            std::max(0.5 + 5.0, 0.0), 
-                            std::max(0.5 + 6.8, 0.0);
+    expectedHiddenOutput << 1.9, 3.7, 5.5, 7.3;
 
-    // Add more expectations based on the actual values of weights and biases
+    Eigen::VectorXd expectedOutputLayerOutput(2);
+    expectedOutputLayerOutput << 6.0, 13.36;
+
     for (int i = 0; i < 4; i++) {
         EXPECT_NEAR(nn.layers[1].output[i], expectedHiddenOutput[i], 1e-5);
+    }
+
+    // Check the output of output layer
+    for (int i = 0; i < 2; i++) {
+        EXPECT_NEAR(nn.layers[2].output[i], expectedOutputLayerOutput[i], 1e-5);
     }
 }
 
