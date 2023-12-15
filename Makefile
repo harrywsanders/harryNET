@@ -2,11 +2,11 @@
 CXX = g++
 # Flags
 CXXFLAGS = -Wall -std=c++14 -g -O1 -Wextra
-CXXFLAGS_PROF = -Wall -std=c++14 -g -O1 -Wextra
+CXXFLAGS_PROF = -Wall -std=c++14 -g -O1 -Wextra 
 # Include directories for header files
 INCLUDES = -I./include -I/users/harrysanders/googletest/googletest/include -I/opt/homebrew/opt/libomp/include
 # Libraries for linking 
-LIBS = -L/users/harrysanders/googletest/build/lib -L/opt/homebrew/opt/gperftools/lib -L/opt/homebrew/opt/libomp/lib -lgtest -lgtest_main -pthread -lprofiler
+LIBS = -L/users/harrysanders/googletest/build/lib -L/opt/homebrew/opt/gperftools/lib -L/opt/homebrew/opt/libomp/lib -lgtest -lgtest_main -pthread -lprofiler -lomp
 # Source files directory
 SRC_DIR = ./src
 # Object files directory
@@ -29,7 +29,7 @@ TEST_OBJECTS = $(TEST_SOURCES:$(TEST_DIR)/%.cpp=$(OBJ_DIR)/%.o)
 TEST_TARGET = $(BIN_DIR)/tests
 
 # Build rules
-all: main tests
+all: main test
 
 profiling: CXXFLAGS = $(CXXFLAGS_PROF)
 profiling: clean main
@@ -44,8 +44,8 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
 	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
 
 # Test build rule
-tests: $(TEST_TARGET)
-	./$(TEST_TARGET)   # Command to run the tests automatically after building
+test: $(TEST_TARGET)
+	./$(TEST_TARGET)  
 
 $(TEST_TARGET): $(TEST_OBJECTS) $(filter-out $(OBJ_DIR)/main.o, $(MAIN_OBJECTS))
 	$(CXX) $^ -o $@ $(LIBS)

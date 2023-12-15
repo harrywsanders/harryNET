@@ -6,6 +6,7 @@ struct Options {
     int batchSize;
     int patience;
     double lambda;
+    bool isTestMode; 
 };
 
 Options parseCommandLineArgs(int argc, char* argv[]) {
@@ -13,11 +14,12 @@ Options parseCommandLineArgs(int argc, char* argv[]) {
     Options options;
     options.trainingDataPath = "train.csv";
     options.testDataPath = "test.csv";
-    options.numEpochs = 10;
-    options.learningRate = 0.01;
+    options.numEpochs = 100;
+    options.learningRate = 0.001;
     options.patience = 10;
     options.batchSize = 32;
     options.lambda = 0.01;
+    options.isTestMode = false;
 
     // Override with command line arguments
     if (argc > 1) options.trainingDataPath = argv[1];
@@ -26,7 +28,15 @@ Options parseCommandLineArgs(int argc, char* argv[]) {
     if (argc > 4) options.learningRate = std::stod(argv[4]);
     if (argc > 5) options.patience = std::stoi(argv[5]);
     if (argc > 6) options.batchSize = std::stoi(argv[6]);
-    if(argc > 7) options.lambda = std::stod(argv[7]);
+    if (argc > 7) options.lambda = std::stod(argv[7]);
+
+    // Check for test mode in remaining arguments
+    for (int i = 8; i < argc; ++i) {
+        if (std::string(argv[i]) == "t") {
+            options.isTestMode = true;
+            break;
+        }
+    }
 
     return options;
 }

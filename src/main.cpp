@@ -1,6 +1,7 @@
 #include <vector>
 #include <cmath>
 #include <random>
+#include <utility>
 #include <iostream>
 #include <algorithm>
 #include <fstream>
@@ -9,6 +10,7 @@
 #include <string>
 #include "../include/NeuralNet.h"
 #include "../include/CommandLine.h"
+#include "../include/activations.h"
 
 void loadDataset(const std::string& filename, std::vector<std::vector<double>>& inputs, std::vector<std::vector<double>>& outputs) {
     std::ifstream file(filename);
@@ -54,13 +56,22 @@ void loadDataset(const std::string& filename, std::vector<std::vector<double>>& 
         inputs.push_back(std::move(input)); 
         outputs.push_back(std::move(output));
     }
+    std::random_device rd;
+    std::mt19937 g(rd());
+
+    for (size_t i = 0; i < inputs.size(); ++i) {
+        size_t j = std::uniform_int_distribution<size_t>(0, i)(g);
+        std::swap(inputs[i], inputs[j]);
+        std::swap(outputs[i], outputs[j]);
+    }
 }
 
 
 
+
 int main(int argc, char* argv[]) {
-    if (argc > 8) {
-        std::cout << "Usage: " << argv[0] << " [<training_data>] [<test_data>] [<num_epochs>] [<learning_rate>] [<patience>] [<batch_size>] [<l2 lambda>]" << std::endl;
+    if (argc > 9) {
+        std::cout << "Usage: " << argv[0] << " [<training_data>] [<test_data>] [<num_epochs>] [<learning_rate>] [<patience>] [<batch_size>] [<l2 lambda>] [<testing?>]" << std::endl;
         return 1;
     }
 
@@ -93,6 +104,20 @@ int main(int argc, char* argv[]) {
         testOutputs.push_back(Eigen::Map<const Eigen::VectorXd>(v.data(), v.size()));
     }
 
+    if (options.isTestMode) {
+        // Reduce dataset size to 5%
+        auto reduceDatasetSize = [](auto& data) {
+            size_t newSize = static_cast<size_t>(data.size() * 0.02);
+            data.resize(newSize);
+        };
+        reduceDatasetSize(trainInputs);
+        reduceDatasetSize(trainOutputs);
+        reduceDatasetSize(testInputs);
+        reduceDatasetSize(testOutputs);
+
+        std::cout << "Running in test mode with reduced dataset size." << std::endl;
+    }
+
     // Create neural network
     NeuralNetwork nn;
     // Initialize each layer
@@ -100,10 +125,10 @@ int main(int argc, char* argv[]) {
     size_t nNeuronsHidden1 = 512;
     size_t nNeuronsHidden2 = 256;
     size_t nNeuronsOutput = 10; 
-    Layer inputLayer(nInputs, nInputs); 
-    Layer hiddenLayer1(nNeuronsHidden1, nInputs); 
-    Layer hiddenLayer2(nNeuronsHidden2, nNeuronsHidden1); 
-    Layer outputLayer(nNeuronsOutput, nNeuronsHidden2);
+    Layer inputLayer(nInputs, nInputs, std::make_unique<inputActivation>(), LayerType::Dense);
+    Layer hiddenLayer1(nNeuronsHidden1, nInputs, std::make_unique<Sigmoid>(), LayerType::Dense);
+    Layer hiddenLayer2(nNeuronsHidden2, nNeuronsHidden1, std::make_unique<Sigmoid>(), LayerType::Dense);
+    Layer outputLayer(nNeuronsOutput, nNeuronsHidden2, std::make_unique<Softmax>(), LayerType::Dense);
 
     nn.layers.push_back(inputLayer);
     nn.layers.push_back(hiddenLayer1);
