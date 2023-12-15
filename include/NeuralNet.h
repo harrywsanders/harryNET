@@ -45,7 +45,6 @@ public:
     void updateWeightsAndBiases(double learningRate, int t, double lambda, double beta1 = 0.9, double beta2 = 0.999, double epsilon = 1e-8);
 
     void train(std::vector<Eigen::VectorXd> &trainInputs, std::vector<Eigen::VectorXd> &trainOutputs, std::vector<Eigen::VectorXd> &validInputs, std::vector<Eigen::VectorXd> &validOutputs, double learningRate, int nEpochs, int batchSize, int patience, double lambda, bool progressBar = true);
-    void train(std::vector<Eigen::VectorXd> &trainInputs, std::vector<Eigen::VectorXd> &trainOutputs, std::vector<Eigen::VectorXd> &validInputs, std::vector<Eigen::VectorXd> &validOutputs, double learningRate, int nEpochs, int batchSize, int patience, double lambda, bool progressBar = true);
 
     void processBatch(const std::vector<Eigen::VectorXd> &inputs, const std::vector<Eigen::VectorXd> &outputs, int startIndex, int batchSize);
 
@@ -78,25 +77,18 @@ void NeuralNetwork::backPropagate(const Eigen::VectorXd &targetOutputs)
 {
     Layer &outputLayer = layers.back();
     outputLayer.delta.noalias() = outputLayer.output - targetOutputs;
-    outputLayer.delta.noalias() = outputLayer.output - targetOutputs;
 
     for (int i = layers.size() - 2; i >= 0; i--)
     {
         Layer &hiddenLayer = layers[i];
         Layer &nextLayer = layers[i + 1];
 
-
         hiddenLayer.delta.noalias() = nextLayer.weights.transpose() * nextLayer.delta;
-
-        Eigen::VectorXd derivative = hiddenLayer.activationFunc->derivative(hiddenLayer.output, targetOutputs);
-        hiddenLayer.delta = hiddenLayer.delta.cwiseProduct(derivative);
 
         Eigen::VectorXd derivative = hiddenLayer.activationFunc->derivative(hiddenLayer.output, targetOutputs);
         hiddenLayer.delta = hiddenLayer.delta.cwiseProduct(derivative);
     }
 }
-
-
 
 void NeuralNetwork::updateWeightsAndBiases(double learningRate, int t, double lambda, double beta1, double beta2, double epsilon)
 {
@@ -127,7 +119,6 @@ void NeuralNetwork::updateWeightsAndBiases(double learningRate, int t, double la
         layer.bias -= (learningRate * m_hat_bias.array() / (v_hat_bias.array().sqrt() + epsilon)).matrix();
     }
 }
-
 
 void NeuralNetwork::train(std::vector<Eigen::VectorXd> &trainInputs, std::vector<Eigen::VectorXd> &trainOutputs, std::vector<Eigen::VectorXd> &validInputs, std::vector<Eigen::VectorXd> &validOutputs, double learningRate, int nEpochs, int batchSize, int patience, double lambda, bool progressBar)
 {
@@ -173,9 +164,8 @@ void NeuralNetwork::train(std::vector<Eigen::VectorXd> &trainInputs, std::vector
             break;
         }
         t = 0;
+    }
 }
-
-
 
 void NeuralNetwork::processBatch(const std::vector<Eigen::VectorXd> &inputs, const std::vector<Eigen::VectorXd> &outputs, int startIndex, int batchSize)
 {
@@ -201,21 +191,18 @@ double NeuralNetwork::calculateMSE(std::vector<Eigen::VectorXd> &inputs, std::ve
     return mse / inputs.size();
 }
 
-double NeuralNetwork::calculateCrossEntropy(std::vector<Eigen::VectorXd> &inputs, std::vector<Eigen::VectorXd> &targetOutputs) {
-    if (inputs.empty()) return std::numeric_limits<double>::quiet_NaN();
-
+double NeuralNetwork::calculateCrossEntropy(std::vector<Eigen::VectorXd> &inputs, std::vector<Eigen::VectorXd> &targetOutputs)
+{
+    if (inputs.empty())
+        return std::numeric_limits<double>::quiet_NaN();
     double crossEntropy = 0.0;
-    const double epsilon = 1e-10; // Small constant to prevent log(0)
-
-    for (int i = 0; i < static_cast<int>(inputs.size()); i++) {
+    for (int i = 0; i < static_cast<int>(inputs.size()); i++)
+    {
         forwardPropagate(inputs[i]);
         Eigen::VectorXd output = layers.back().output;
-
-        Eigen::VectorXd safeLogOutput = output.unaryExpr([epsilon](double x) { return std::log(x + epsilon); });
-
-        crossEntropy += -targetOutputs[i].dot(safeLogOutput);
+        crossEntropy += -targetOutputs[i].dot(output.unaryExpr([](double x)
+                                                               { return std::log(x); }));
     }
-
     return crossEntropy / inputs.size();
 }
 
