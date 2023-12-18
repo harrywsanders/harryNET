@@ -50,7 +50,7 @@ public:
 
     double calculateMSE(std::vector<Eigen::VectorXd> &inputs, std::vector<Eigen::VectorXd> &targetOutputs);
 
-    double calculateCrossEntropy(std::vector<Eigen::VectorXd> &inputs, std::vector<Eigen::VectorXd> &targetOutputs);
+    double calculateCrossEntropy(const std::vector<Eigen::VectorXd> &inputs, const std::vector<Eigen::VectorXd> &targetOutputs);
 
     Eigen::VectorXd predict(const Eigen::VectorXd &inputs);
 
@@ -64,11 +64,11 @@ public:
 void NeuralNetwork::forwardPropagate(const Eigen::VectorXd &inputs)
 {
     layers[0].output = inputs;
+    Eigen::VectorXd z;
 
     for (size_t i = 1; i < layers.size(); i++)
     {
-        Eigen::VectorXd z = layers[i].weights * layers[i - 1].output + layers[i].bias;
-
+        z.noalias() = layers[i].weights * layers[i - 1].output + layers[i].bias;
         layers[i].output = layers[i].activationFunc->apply(z);
     }
 }
@@ -77,7 +77,6 @@ void NeuralNetwork::backPropagate(const Eigen::VectorXd &targetOutputs)
 {
     Layer &outputLayer = layers.back();
     outputLayer.delta.noalias() = outputLayer.output - targetOutputs;
-
     for (int i = layers.size() - 2; i >= 0; i--)
     {
         Layer &hiddenLayer = layers[i];
@@ -92,6 +91,7 @@ void NeuralNetwork::backPropagate(const Eigen::VectorXd &targetOutputs)
 
 void NeuralNetwork::updateWeightsAndBiases(double learningRate, int t, double lambda, double beta1, double beta2, double epsilon)
 {
+#pragma omp parallel for
     for (int i = 1; i < static_cast<int>(layers.size()); ++i)
     {
         Layer &layer = layers[i];
@@ -145,7 +145,7 @@ void NeuralNetwork::train(std::vector<Eigen::VectorXd> &trainInputs, std::vector
         double trainMSE = calculateCrossEntropy(trainInputs, trainOutputs);
         if (progressBar)
         {
-            std::cout << "\nEpoch: " << epoch << ", Train CE: " << trainMSE << ", Valid CE: " << validMSE << std::endl;
+            std::cout << "\nEpoch: " << epoch + 1 << ", Train CE: " << trainMSE << ", Valid CE: " << validMSE << std::endl;
         }
 
         if (validMSE < bestValidMSE)
@@ -191,19 +191,29 @@ double NeuralNetwork::calculateMSE(std::vector<Eigen::VectorXd> &inputs, std::ve
     return mse / inputs.size();
 }
 
-double NeuralNetwork::calculateCrossEntropy(std::vector<Eigen::VectorXd> &inputs, std::vector<Eigen::VectorXd> &targetOutputs)
+double NeuralNetwork::calculateCrossEntropy(const std::vector<Eigen::VectorXd> &inputs, const std::vector<Eigen::VectorXd> &targetOutputs)
 {
     if (inputs.empty())
         return std::numeric_limits<double>::quiet_NaN();
+
     double crossEntropy = 0.0;
-    for (int i = 0; i < static_cast<int>(inputs.size()); i++)
+    const int dataSize = static_cast<int>(inputs.size());
+
+#pragma omp parallel for reduction(+ : crossEntropy)
+    for (int i = 0; i < dataSize; i++)
     {
         forwardPropagate(inputs[i]);
-        Eigen::VectorXd output = layers.back().output;
-        crossEntropy += -targetOutputs[i].dot(output.unaryExpr([](double x)
-                                                               { return std::log(x); }));
+        const Eigen::VectorXd &output = layers.back().output;
+
+        for (int j = 0; j < output.size(); ++j)
+        {
+            if (output[j] > 0)
+            {
+                crossEntropy -= targetOutputs[i][j] * std::log(output[j]);
+            }
+        }
     }
-    return crossEntropy / inputs.size();
+    return crossEntropy / dataSize;
 }
 
 Eigen::VectorXd NeuralNetwork::predict(const Eigen::VectorXd &inputs)
