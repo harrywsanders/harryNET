@@ -1,7 +1,7 @@
 /**
  * @class NeuralNetwork
  *
- * @brief A simple implementation of a feed-forward neural network using the backpropagation algorithm.
+ * @brief A simple implementation of a recurrent neural network using the backpropagation algorithm.
  *
  * This class represents a neural network model consisting of multiple layers of neurons. Each neuron has a set of weights, a bias, an output value, and a delta value used for backpropagation.
  * The neural network uses the sigmoid activation function for neurons and the mean squared error (MSE) loss function.
