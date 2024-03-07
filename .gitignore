@@ -1,0 +1,4 @@
+## Ignore include/autodiff folder 
+include/autodiff
+include/Eigen
+
