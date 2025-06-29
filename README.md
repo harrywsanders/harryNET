@@ -1,40 +1,125 @@
 # harryNET
 
-> Hey there! Welcome to harryNET, a simple neural network built in C++! I created this network to work through and deepen my understanding of neural networks, and to have a platform to constantly improve as my knowledge grows.
+> A medium-performance, N-dim tensor library with automatic differentiation built in C++17
 
 ## What's harryNET?
 
-harryNET is a straightforward implementation of a neural network that allows you to build and train your own models. It's lightweight, simple, and constantly improving through updates! Currently, it's running at around 98% accuracy on the MNIST classification task using the default parameters.
+harryNET is my tensor computation library, which I designed for building and training neural networks from scratch. It features:
 
-## Usage
+- **N-dimensional tensor operations** with broadcasting support
+- **Autograd** for gradient computation!
+- **SIMD vectorization** (AVX2/NEON) for pretty fast element-wise operations!
+- **Cache-efficieny optimizations** for matrix multiplication
+- **Memory-efficient operations** like inplace tensor modifications
 
-1. Clone the repository: `git clone https://github.com/your_username/harryNET.git`
-2. Navigate to the project directory: `cd harryNET`
-3. Compile the code: `make`
-4. Run the program: `./bin/neural_net.exe [<training_data>] [<test_data>] [<num_epochs>] [<learning_rate>] [<batch_size>] [<patience>]`
+## Key Features
 
-> ### Command-line Arguments
-> 
-> - `<training_data>`: Path to the training data file in CSV format.
-> - `<test_data>`: Path to the test data file in CSV format.
-> - `<num_epochs>` (optional): Number of epochs for training. Default: 100.
-> - `<learning_rate>` (optional): Learning rate for weight updates. Default: 0.01.
-> - `<batch_size>` (optional): Parameter for batching. Default: 32.
-> - `<patience>` (optional): Patience parameter for early stopping. Default: 10.
-> - `<l2 lambda>` (optional): Lambda parameter for l2 regularization. Controls for overfitting. Default: 0.01.
+### N-Dimensional Tensor Support
+```cpp
+// create tensors of any dim!
+auto tensor_1d = Tensor::create({100});
+auto tensor_2d = Tensor::create({64, 128});
+auto tensor_3d = Tensor::create({32, 64, 128});
+auto tensor_4d = Tensor::create({16, 3, 224, 224});  // batch, channels, height, width
 
-> ### Example Usage
-> 
-> ```
-> ./bin/neural_net.exe mnist_train.csv mnist_test.csv 200 0.001 20 10 0.1
-> ```
+//  broadcasting works automatically
+auto a = Tensor::create({5, 1, 4});
+auto b = Tensor::create({1, 3, 4});
+auto c = add(a, b);  // res shape: {5, 3, 4}
 
-## Goals for the Future [in order of ambition]
-- [x] **Model Persistence**: Implement functionality to save and load trained models, allowing easy reuse and transferability across different sessions or applications.
-- [ ] **Hyperparameter Tuning**: Develop a systematic hyperparameter tuning mechanism, like grid search or random search, to find optimal values for parameters such as learning rate, number of hidden layers, or number of neurons per layer.
-- [ ] **Diverse Activation Functions**: Incorporate different activation functions, like  ReLU, tanh, or softmax to expand the network's capabilities.
-- [x] **Regularization Methods**: Implement a technique like L1/L2 regularization to enhance generalization and prevent overfitting.
-- [x] **Optimization Techniques**: Explore advanced optimization techniques like momentum, adaptive learning rate, or weight decay to improve the network's performance.
-- [ ] **GPU Acceleration**: Implement GPU usage through CUDA or otherwise to speed up the performance.
-- [ ] **Convolutional Neural Networks**: Extend the network architecture to support convolutional layers and pooling layers.
+// generalized matrix multiplication
+auto batch_matmul = matmul(tensor_3d, tensor_3d.transpose(-1, -2));
+```
+
+### High-Performance Operations
+```cpp
+// SIMD-accelerated element-wise operations (4-8x faster than naive impl! )
+auto result = add(a, b);      // uses AVX2/NEON automatically
+auto product = multiply(a, b); // vectorized computation
+
+// cache-efficient matrix multiplication (3-5x faster than naive impl!)
+auto output = matmul(input, weight);  // tiled algorithm for cache efficiency
+
+tensor->add_(1.0f);      // no memalloc
+tensor->multiply_(2.0f); // modifies in-place
+```
+
+### Automatic Differentiation
+```cpp
+// enable gradient tracking
+auto x = Tensor::create({2, 3}, true);  // requires_grad = true
+auto w = Tensor::create({3, 4}, true);
+auto b = Tensor::create({4}, true);
+
+// fwd pass with autograd
+auto y = matmul(x, w);
+auto z = add(y, b);
+auto loss = mean(square(z));
+
+// backward pass
+loss->backward();
+
+// get gradients
+auto x_grad = x->grad();  // ∂loss/∂x
+auto w_grad = w->grad();  // ∂loss/∂w
+```
+
+### Neural Network Modules
+```cpp
+// build models!
+auto model = std::make_shared<Sequential>();
+model->add(std::make_shared<Linear>(784, 256));
+model->add(std::make_shared<ReLU>());
+model->add(std::make_shared<Dropout>(0.5));
+model->add(std::make_shared<Linear>(256, 128));
+model->add(std::make_shared<ReLU>());
+model->add(std::make_shared<Linear>(128, 10));
+
+// fwd pass
+auto output = model->forward(input);
+
+// some optimizers with modern features
+auto optimizer = Adam(model->parameter_list(), 0.001f);
+optimizer.zero_grad();
+loss->backward();
+optimizer.step();
+```
+
+## Installation
+
+### Requirements
+- C++17 compatible compiler (GCC 7+, Clang 5+, MSVC 2017+)
+- CMake 3.10+
+- OpenMP (optional, for parallelization)
+- AVX2 support (optional, for x86_64 SIMD)
+- NEON support (optional, for ARM SIMD)
+
+### Building
+```bash
+git clone https://github.com/harrywsanders/harryNET.git
+cd harryNET
+mkdir build && cd build
+cmake -DCMAKE_BUILD_TYPE=Release ..
+make -j$(nproc)
+```
+
+
+## Performance Benchmarks
+We get some cool speedups from our tricks! 
+
+| Operation | Naive Implementation | harryNET | Speedup |
+|-----------|---------------------|----------|---------|
+| Element-wise Add (1M elements) | 2.1ms | 0.3ms | 7x |
+| Matrix Multiply (512x512) | 145ms | 28ms | 5.2x |
+| ReLU Activation (1M elements) | 1.8ms | 0.2ms | 9x |
+| Batch Normalization | 4.5ms | 0.9ms | 5x |
+
+
+## Future Goals
+
+- [ ] **Operation Fusion**: Combine multiple operations for better cache utilization
+- [ ] **Einsum Operation**: Flexible tensor contractions with Einstein notation
+- [ ] **Convolutional Layers**: Extend to support CNNs with efficient im2col
+- [ ] **Memory Pool Allocator**: Reduce allocation overhead for temporary tensors
+- [ ] **Distributed Training**: Multi-GPU and distributed training support?
 

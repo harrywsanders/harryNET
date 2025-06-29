@@ -1,148 +1,84 @@
-#include <vector>
-#include <cmath>
-#include <random>
-#include <utility>
+#include "harryNET/tensor.h"
+#include "harryNET/ops.h"
+#include "harryNET/module.h"
+#include "harryNET/optimizer.h"
 #include <iostream>
-#include <algorithm>
-#include <fstream>
-#include <sstream>
-#include <vector>
-#include <string>
-#include "../include/NeuralNet.h"
-#include "../include/CommandLine.h"
-#include "../include/activations.h"
+#include <iomanip>
 
-void loadDataset(const std::string& filename, std::vector<std::vector<double>>& inputs, std::vector<std::vector<double>>& outputs) {
-    std::ifstream file(filename);
-    if (!file) {
-        // Handle error or throw an exception
-        std::cout << "Error opening file: " << filename << std::endl;
-        return;
+using namespace harrynet;
+
+int main() {
+    std::cout << "=== HarryNET Deep Learning Library ===" << std::endl;
+    std::cout << "A clean, modern C++ implementation with automatic differentiation\n" << std::endl;
+
+    // Create some tensors
+    std::cout << "1. Creating tensors:" << std::endl;
+    auto x = Tensor::randn(Shape({2, 3}), true);
+    auto y = Tensor::randn(Shape({3, 4}), true);
+    
+    std::cout << "x = " << x->to_string() << std::endl;
+    std::cout << "y = " << y->to_string() << std::endl;
+    
+    // Perform operations
+    std::cout << "\n2. Matrix multiplication:" << std::endl;
+    auto z = matmul(x, y);
+    std::cout << "z = x @ y" << std::endl;
+    z->print();
+    
+    // Compute loss
+    std::cout << "\n3. Computing loss:" << std::endl;
+    auto target = Tensor::randn(Shape({2, 4}), false);
+    auto loss = mse_loss(z, target);
+    std::cout << "loss = MSE(z, target) = " << loss->data()[0] << std::endl;
+    
+    // Backward pass
+    std::cout << "\n4. Backward pass:" << std::endl;
+    loss->backward();
+    std::cout << "Gradients computed!" << std::endl;
+    
+    // Create a simple neural network
+    std::cout << "\n5. Creating a neural network:" << std::endl;
+    auto model = std::make_shared<Sequential>();
+    model->add(std::make_shared<Linear>(10, 64));
+    model->add(std::make_shared<ReLU>());
+    model->add(std::make_shared<Linear>(64, 32));
+    model->add(std::make_shared<ReLU>());
+    model->add(std::make_shared<Linear>(32, 1));
+    
+    std::cout << "Model created with " << model->size() << " layers" << std::endl;
+    
+    // Create optimizer
+    auto params = model->parameter_list();
+    Adam optimizer(params, 0.001f);
+    std::cout << "Adam optimizer initialized with " << params.size() << " parameters" << std::endl;
+    
+    // Mini training loop
+    std::cout << "\n6. Training for 10 iterations:" << std::endl;
+    auto input = Tensor::randn(Shape({8, 10}), false);  // Batch of 8
+    auto labels = Tensor::randn(Shape({8, 1}), false);
+    
+    for (int i = 0; i < 10; ++i) {
+        // Forward pass
+        auto output = model->forward(input);
+        auto loss_val = mse_loss(output, labels);
+        
+        // Backward pass
+        optimizer.zero_grad();
+        loss_val->backward();
+        
+        // Update weights
+        optimizer.step();
+        
+        std::cout << "Iteration " << std::setw(2) << i + 1 
+                  << ", Loss: " << std::setprecision(6) << loss_val->data()[0] << std::endl;
     }
-
-    // Estimate dataset size
-    unsigned int numLines = std::count(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>(), '\n');
-    file.clear();
-    file.seekg(0, std::ios::beg); 
-
-    std::string line;
-    std::getline(file, line);
-    unsigned int numColumns = std::count(line.begin(), line.end(), ',') + 1;
-
-    // Reserve capacity for inputs and outputs
-    inputs.reserve(numLines);
-    outputs.reserve(numLines);
-
-    double reciprocal_255 = 1.0 / 255.0;
-    std::string value;
-    double num;
-    while (std::getline(file, line)) {
-        std::vector<double> input;
-        input.reserve(numColumns - 1); 
-        std::vector<double> output(10, 0.0); 
-
-        std::stringstream ss(line);
-        int index = 0;
-        while (std::getline(ss, value, ',')) {
-            num = std::stod(value);
-            if (index == 0) {
-                output[static_cast<int>(num)] = 1.0;
-            } else {
-                input.push_back(num * reciprocal_255);
-            }
-            index++;
-        }
-
-        inputs.push_back(std::move(input)); 
-        outputs.push_back(std::move(output));
-    }
-    std::random_device rd;
-    std::mt19937 g(rd());
-
-    for (size_t i = 0; i < inputs.size(); ++i) {
-        size_t j = std::uniform_int_distribution<size_t>(0, i)(g);
-        std::swap(inputs[i], inputs[j]);
-        std::swap(outputs[i], outputs[j]);
-    }
-}
-
-
-
-
-int main(int argc, char* argv[]) {
-    if (argc > 9) {
-        std::cout << "Usage: " << argv[0] << " [<training_data>] [<test_data>] [<num_epochs>] [<learning_rate>] [<patience>] [<batch_size>] [<l2 lambda>] [<testing?>]" << std::endl;
-        return 1;
-    }
-
-    Options options = parseCommandLineArgs(argc, argv);
-
-    std::vector<std::vector<double>> trainInputsRaw, trainOutputsRaw;
-    std::vector<std::vector<double>> testInputsRaw, testOutputsRaw;
-
-    loadDataset(options.trainingDataPath, trainInputsRaw, trainOutputsRaw);
-    loadDataset(options.testDataPath, testInputsRaw, testOutputsRaw);
-
-    std::cout << "Data has been loaded successfully." << std::endl;
-
-    std::vector<Eigen::VectorXd> trainInputs, trainOutputs;
-    std::vector<Eigen::VectorXd> testInputs, testOutputs;
-
-    for (const auto &v : trainInputsRaw) {
-        trainInputs.push_back(Eigen::Map<const Eigen::VectorXd>(v.data(), v.size()));
-    }
-
-    for (const auto &v : trainOutputsRaw) {
-        trainOutputs.push_back(Eigen::Map<const Eigen::VectorXd>(v.data(), v.size()));
-    }
-
-    for (const auto &v : testInputsRaw) {
-        testInputs.push_back(Eigen::Map<const Eigen::VectorXd>(v.data(), v.size()));
-    }
-
-    for (const auto &v : testOutputsRaw) {
-        testOutputs.push_back(Eigen::Map<const Eigen::VectorXd>(v.data(), v.size()));
-    }
-
-    if (options.isTestMode) {
-        // Reduce dataset size to 5%
-        auto reduceDatasetSize = [](auto& data) {
-            size_t newSize = static_cast<size_t>(data.size() * 0.02);
-            data.resize(newSize);
-        };
-        reduceDatasetSize(trainInputs);
-        reduceDatasetSize(trainOutputs);
-        reduceDatasetSize(testInputs);
-        reduceDatasetSize(testOutputs);
-
-        std::cout << "Running in test mode with reduced dataset size." << std::endl;
-    }
-
-    // Create neural network
-    NeuralNetwork nn;
-    // Initialize each layer
-    size_t nInputs = 784;
-    size_t nNeuronsHidden1 = 512;
-    size_t nNeuronsHidden2 = 256;
-    size_t nNeuronsOutput = 10; 
-    Layer inputLayer(nInputs, nInputs, std::make_unique<inputActivation>(), LayerType::Dense);
-    Layer hiddenLayer1(nNeuronsHidden1, nInputs, std::make_unique<Sigmoid>(), LayerType::Dense);
-    Layer hiddenLayer2(nNeuronsHidden2, nNeuronsHidden1, std::make_unique<Sigmoid>(), LayerType::Dense);
-    Layer outputLayer(nNeuronsOutput, nNeuronsHidden2, std::make_unique<Softmax>(), LayerType::Dense);
-
-    nn.layers.push_back(inputLayer);
-    nn.layers.push_back(hiddenLayer1);
-    nn.layers.push_back(hiddenLayer2);
-    nn.layers.push_back(outputLayer);
-    std::cout << "Network initialized. Training beginning." << std::endl;
-
-
-    // Train the network
-    nn.train(trainInputs, trainOutputs, testInputs, testOutputs, options.learningRate, options.numEpochs, options.batchSize, options.patience,options.lambda);
-
-    // Evaluate accuracy on test data
-    double accuracy = nn.accuracy(testInputs, testOutputs);
-    std::cout << "Test accuracy: " << accuracy << std::endl;
-
+    
+    std::cout << "\nHarryNET is ready for deep learning!" << std::endl;
+    std::cout << "\nKey features:" << std::endl;
+    std::cout << "- Automatic differentiation with correct topological sorting" << std::endl;
+    std::cout << "- Memory-safe design with smart pointers" << std::endl;
+    std::cout << "- PyTorch-like API for ease of use" << std::endl;
+    std::cout << "- Optimized for performance with aligned memory and SIMD support" << std::endl;
+    
     return 0;
 }

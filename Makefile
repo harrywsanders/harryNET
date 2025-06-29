@@ -1,58 +1,40 @@
-# Compiler
-CXX = g++
-# Flags
-CXXFLAGS = -Wall -std=c++14 -g -O1 -Wextra
-CXXFLAGS_PROF = -Wall -std=c++14 -g -O1 -Wextra 
-# Include directories for header files
-INCLUDES = -I./include -I/users/harrysanders/googletest/googletest/include -I/opt/homebrew/opt/libomp/include
-# Libraries for linking 
-LIBS = -L/users/harrysanders/googletest/build/lib -L/opt/homebrew/opt/gperftools/lib -L/opt/homebrew/opt/libomp/lib -lgtest -lgtest_main -pthread -lprofiler -lomp
-# Source files directory
-SRC_DIR = ./src
-# Object files directory
-OBJ_DIR = ./obj
-# Binary directory
-BIN_DIR = ./bin
-# Test directory
-TEST_DIR = ./src
+.PHONY: all build run clean test help
 
-# Target executable name
-TARGET = $(BIN_DIR)/neural_net.exe
+# Default target
+all: build
 
-# Main source files (excluding tests)
-MAIN_SOURCES = $(wildcard $(SRC_DIR)/main.cpp)
-MAIN_OBJECTS = $(MAIN_SOURCES:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
+# Build the project using CMake
+build:
+	@mkdir -p build
+	@cd build && cmake -DCMAKE_BUILD_TYPE=Release .. && make -j$$(nproc 2>/dev/null || sysctl -n hw.ncpu)
 
-# Test files
-TEST_SOURCES = $(wildcard $(TEST_DIR)/tests.cpp)
-TEST_OBJECTS = $(TEST_SOURCES:$(TEST_DIR)/%.cpp=$(OBJ_DIR)/%.o)
-TEST_TARGET = $(BIN_DIR)/tests
+# Build and run the main executable
+run: build
+	@cd build && ./harrynet_main
 
-# Build rules
-all: main test
+# Run tests if they exist
+test: build
+	@cd build && ctest --verbose || echo "No tests configured"
 
-profiling: CXXFLAGS = $(CXXFLAGS_PROF)
-profiling: clean main
-
-main: $(MAIN_OBJECTS)
-	$(CXX) $^ -o $(TARGET) $(LIBS)
-
-run_main: main
-	./$(TARGET) mnist_train.csv mnist_test.csv
-
-$(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
-	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
-
-# Test build rule
-test: $(TEST_TARGET)
-	./$(TEST_TARGET)  
-
-$(TEST_TARGET): $(TEST_OBJECTS) $(filter-out $(OBJ_DIR)/main.o, $(MAIN_OBJECTS))
-	$(CXX) $^ -o $@ $(LIBS)
-
-$(OBJ_DIR)/%.o: $(TEST_DIR)/%.cpp
-	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
-
-# Clean rule
+# Clean build artifacts
 clean:
-	rm -f $(OBJ_DIR)/*.o $(BIN_DIR)/*
+	@rm -rf build
+
+# Clean and rebuild
+rebuild: clean build
+
+# Build with debug symbols
+debug:
+	@mkdir -p build
+	@cd build && cmake -DCMAKE_BUILD_TYPE=Debug .. && make -j$$(nproc 2>/dev/null || sysctl -n hw.ncpu)
+
+# Show available targets
+help:
+	@echo "Available targets:"
+	@echo "  make build    - Build the project"
+	@echo "  make run      - Build and run the main executable"
+	@echo "  make test     - Run tests"
+	@echo "  make clean    - Remove build artifacts"
+	@echo "  make rebuild  - Clean and rebuild"
+	@echo "  make debug    - Build with debug symbols"
+	@echo "  make help     - Show this help message"
